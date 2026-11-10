@@ -200,16 +200,17 @@ check "invalid CLICKHOUSE_MEMORY_RATIO refused" refuses_to_start ratio "CLICKHOU
 GEN_NAME=$NAME-gen
 GEN_VOL=$VOL-gen
 inside() { docker exec "$GEN_NAME" "$@"; }
-gen_secret_from_logs() { # $1 = label in the log line
-  docker logs "$GEN_NAME" 2>&1 | grep -F "generated $1" | sed -E 's/.*: ([^ ]+)$/\1/' | tail -1
-}
 docker run -d --name "$GEN_NAME" --network none -v "$GEN_VOL:/data" \
   -e DOMAIN=otel.example.test -e ACME_STAGING=1 "$IMAGE" >/dev/null
 check "public mode without credentials becomes healthy" wait_healthy "$GEN_NAME"
-GEN_TOKEN=$(gen_secret_from_logs "an OTLP token")
-GEN_PASS=$(gen_secret_from_logs "a Grafana admin password")
-check "a generated OTLP token is printed once in the logs" test -n "$GEN_TOKEN"
-check "a generated Grafana password is printed once in the logs" test -n "$GEN_PASS"
+GEN_TOKEN=$(inside cat /data/secrets/otlp_token 2>/dev/null)
+GEN_PASS=$(inside cat /data/secrets/grafana_admin_password 2>/dev/null)
+check "a generated OTLP token is stored in /data/secrets" test -n "$GEN_TOKEN"
+check "a generated Grafana password is stored in /data/secrets" test -n "$GEN_PASS"
+check "logs tell the operator where the token is stored" bash -c \
+  "docker logs $GEN_NAME 2>&1 | grep -qF 'cat /data/secrets/otlp_token'"
+check "generated secrets never appear in the logs" bash -c \
+  "! docker logs $GEN_NAME 2>&1 | grep -qF -e '$GEN_TOKEN' -e '$GEN_PASS'"
 otlp_inside() { # $1 = token (may be empty)
   python3 "$HERE/fixture_now.py" "$HERE/fixtures/logs.json" | docker exec -i "$GEN_NAME" curl -s -o /dev/null \
     -w '%{http_code}' -X POST http://127.0.0.1:4318/v1/logs -H 'Content-Type: application/json' \
@@ -226,8 +227,8 @@ check "public mode: healthy after restart" wait_healthy "$GEN_NAME"
 check "public mode: same token still works after restart" test "$(otlp_inside "$GEN_TOKEN")" = 200
 check "public mode: same password still works after restart" test \
   "$(inside curl -s -o /dev/null -w '%{http_code}' -u "admin:$GEN_PASS" http://127.0.0.1:3000/api/search)" = 200
-check "public mode: secrets are not printed again on restart" test \
-  "$(docker logs "$GEN_NAME" 2>&1 | grep -cF "$GEN_TOKEN")" = 1
+check "public mode: secrets still absent from logs after restart" bash -c \
+  "! docker logs $GEN_NAME 2>&1 | grep -qF -e '$GEN_TOKEN' -e '$GEN_PASS'"
 docker rm -f "$GEN_NAME" >/dev/null
 docker volume rm "$GEN_VOL" >/dev/null
 

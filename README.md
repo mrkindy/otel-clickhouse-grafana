@@ -47,9 +47,18 @@ docker run -d --name otel --restart unless-stopped --stop-timeout 30 \
 Open `https://otel.example.com` and log in as `admin`.
 
 If you leave out `OTLP_TOKENS` or `GRAFANA_ADMIN_PASSWORD` while `DOMAIN` is set,
-the container generates a random token / password, prints it **once** in
-`docker logs` and keeps it in `/data/secrets/` so restarts don't change it. It
-never runs open on a public domain.
+the container never runs open: it generates a random token / password and keeps
+it in `/data/secrets/` on the volume, so restarts don't change it. The values
+are **not** written to the logs; `docker logs` only says where they are. Read
+them with:
+
+```sh
+docker exec otel cat /data/secrets/otlp_token
+docker exec otel cat /data/secrets/grafana_admin_password
+```
+
+Setting `OTLP_TOKENS` / `GRAFANA_ADMIN_PASSWORD` yourself later takes
+precedence over the generated values.
 
 While testing, add `-e ACME_STAGING=1` so failed attempts don't count against
 Let's Encrypt's production limits (5 certificates for the same domain per 7
@@ -161,7 +170,7 @@ and can be explored in Grafana.
 ```sh
 make build   # local architecture
 make test    # build + end-to-end smoke test
-make push IMAGE=<dockerhub-user>/otel-clickhouse-grafana VERSION=0.1.0   # amd64 + arm64
+make push IMAGE=<dockerhub-user>/otel-clickhouse-grafana VERSION=1.0.0   # amd64 + arm64
 ```
 
 - Dashboards are generated: edit [dashboards/build.py](dashboards/build.py), run

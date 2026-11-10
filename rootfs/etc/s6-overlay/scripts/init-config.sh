@@ -48,8 +48,9 @@ log "mode: $MODE${DOMAIN:+ (domain: $DOMAIN)}"
 # script uses the new values.
 # ---------------------------------------------------------------------------
 #
-# Policy: generate what is missing, keep it on the volume so restarts don't
-# break clients, and print each secret only on the boot that created it.
+# Policy: generate what is missing and keep it on the volume so restarts don't
+# break clients. Secret values are never written to the logs; the log line
+# only says where to read them.
 enforce_security_policy() {
   [ "$MODE" = public ] || return 0
   local dir=/data/secrets
@@ -58,7 +59,7 @@ enforce_security_policy() {
   if [ -z "$(trim_list "$OTLP_TOKENS")" ]; then
     if [ ! -s "$dir/otlp_token" ]; then
       gen_secret > "$dir/otlp_token"
-      log "OTLP_TOKENS not set: generated an OTLP token (shown once, kept in $dir/otlp_token): $(cat "$dir/otlp_token")"
+      log "OTLP_TOKENS not set: generated an OTLP token. Read it with: docker exec <container> cat $dir/otlp_token"
     else
       log "OTLP_TOKENS not set: using the token generated earlier ($dir/otlp_token)"
     fi
@@ -68,7 +69,7 @@ enforce_security_policy() {
   if [ -z "$GRAFANA_ADMIN_PASSWORD" ]; then
     if [ ! -s "$dir/grafana_admin_password" ]; then
       gen_secret > "$dir/grafana_admin_password"
-      log "GRAFANA_ADMIN_PASSWORD not set: generated a Grafana admin password (shown once, kept in $dir/grafana_admin_password): $(cat "$dir/grafana_admin_password")"
+      log "GRAFANA_ADMIN_PASSWORD not set: generated a Grafana admin password. Read it with: docker exec <container> cat $dir/grafana_admin_password"
     else
       log "GRAFANA_ADMIN_PASSWORD not set: using the password generated earlier ($dir/grafana_admin_password)"
     fi

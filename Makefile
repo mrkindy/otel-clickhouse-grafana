@@ -1,7 +1,7 @@
 IMAGE      ?= otel-clickhouse-grafana
 TAG        ?= dev
 PLATFORMS  ?= linux/amd64,linux/arm64
-VERSION    ?= 0.1.0
+VERSION    ?= 1.0.0
 BUILDER    ?= octg-multiarch
 
 .PHONY: build test run dashboards push
