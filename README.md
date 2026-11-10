@@ -185,8 +185,9 @@ make push IMAGE=<dockerhub-user>/otel-clickhouse-grafana VERSION=1.0.0   # amd64
   once with `docker run --privileged --rm tonistiigi/binfmt --install arm64`
   and use a `docker-container` buildx builder.
 - [.github/workflows/release.yml](.github/workflows/release.yml) tests and
-  publishes on every `v*.*.*` tag (needs the `DOCKERHUB_USERNAME` variable and
-  `DOCKERHUB_TOKEN` secret).
+  publishes on every `v*.*.*` tag. It needs the `DOCKERHUB_TOKEN` repository
+  secret; `DOCKERHUB_USERNAME` (variable or secret) is optional and defaults to
+  the GitHub repository owner.
 
 ## Licenses
 
