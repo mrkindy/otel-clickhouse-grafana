@@ -1,0 +1,701 @@
+{
+  "uid": "claude-code-overview",
+  "title": "Claude Code — Overview",
+  "description": "Spend, token use and activity across all Claude Code sessions.",
+  "tags": [
+    "claude-code"
+  ],
+  "editable": false,
+  "graphTooltip": 1,
+  "schemaVersion": 41,
+  "version": 1,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "timepicker": {},
+  "timezone": "browser",
+  "links": [
+    {
+      "title": "Claude Code",
+      "type": "dashboards",
+      "tags": [
+        "claude-code"
+      ],
+      "asDropdown": false,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "user",
+        "label": "User",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "clickhouse"
+        },
+        "query": "SELECT DISTINCT if(UserEmail != '', UserEmail, UserId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND if(UserEmail != '', UserEmail, UserId) != '' ORDER BY 1",
+        "includeAll": true,
+        "allValue": "__all__",
+        "multi": false,
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total cost",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT sum(Value) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}')"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "noValue": "0",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "id": 1
+    },
+    {
+      "type": "stat",
+      "title": "Tokens",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT sum(Value) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}')"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "id": 2
+    },
+    {
+      "type": "stat",
+      "title": "Sessions",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT uniqExact(SessionId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND SessionId != ''"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "id": 3
+    },
+    {
+      "type": "stat",
+      "title": "Active users",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT uniqExact(if(UserEmail != '', UserEmail, UserId)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND if(UserEmail != '', UserEmail, UserId) != ''"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "id": 4
+    },
+    {
+      "type": "stat",
+      "title": "Cache hit rate",
+      "description": "Share of input tokens served from the prompt cache (cacheRead / (input + cacheRead + cacheCreation)).",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT sumIf(Value, Attributes['type'] = 'cacheRead') / nullIf(sumIf(Value, Attributes['type'] IN ('input', 'cacheRead', 'cacheCreation')), 0) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}')"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "noValue": "0",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "id": 5
+    },
+    {
+      "type": "stat",
+      "title": "API errors",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT countIf(Event = 'api_error') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}')"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "id": 6
+    },
+    {
+      "type": "timeseries",
+      "title": "Cost by model",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "queryType": "timeseries",
+          "rawSql": "SELECT $__timeInterval(TimeUnix) AS time, Attributes['model'] AS model, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}') GROUP BY time, model ORDER BY time"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            },
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "displayName": "${__field.labels.model}"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 9
+      },
+      "id": 7
+    },
+    {
+      "type": "timeseries",
+      "title": "Tokens by type",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "queryType": "timeseries",
+          "rawSql": "SELECT $__timeInterval(TimeUnix) AS time, Attributes['type'] AS type, sum(Value) AS tokens FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}') GROUP BY time, type ORDER BY time"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            },
+            "showPoints": "never",
+            "spanNulls": false
+          },
+          "displayName": "${__field.labels.type}"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 9
+      },
+      "id": 8
+    },
+    {
+      "type": "piechart",
+      "title": "Cost by model",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT Attributes['model'] AS model, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}') GROUP BY model ORDER BY cost DESC"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 8,
+        "h": 9
+      },
+      "id": 9
+    },
+    {
+      "type": "piechart",
+      "title": "Cost by source",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT if(Attributes['query_source'] != '', Attributes['query_source'], 'main') AS source, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}') GROUP BY source ORDER BY cost DESC"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "values": [
+            "value",
+            "percent"
+          ],
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 13,
+        "w": 8,
+        "h": 9
+      },
+      "id": 10
+    },
+    {
+      "type": "barchart",
+      "title": "Cost by user",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) AS user, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND ('${user}' = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = '${user}') GROUP BY user ORDER BY cost DESC LIMIT 15"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "legend": {
+          "showLegend": false
+        },
+        "xTickLabelRotation": 0,
+        "barWidth": 0.8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 13,
+        "w": 8,
+        "h": 9
+      },
+      "id": 11
+    },
+    {
+      "type": "table",
+      "title": "Most expensive sessions",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, min(Timestamp) AS started, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND SessionId != '' GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cost_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "session"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open session",
+                    "url": "/d/claude-code-session-detail?var-session=${__value.raw}&${__url_time_range}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 9
+      },
+      "id": 12
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+# Example deployment on a server with a public domain.
+# Copy to docker-compose.yml, fill in the values (or a .env file), then: docker compose up -d
+services:
+  otel:
+    image: mrkindy/otel-clickhouse-grafana:latest
+    restart: unless-stopped
+    # Give ClickHouse time to flush and stop cleanly (Docker's default is 10s).
+    stop_grace_period: 30s
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - otel-data:/data
+    environment:
+      DOMAIN: otel.example.com
+      ACME_EMAIL: you@example.com
+      # One token per developer, comma-separated. Remove one and restart to revoke it.
+      OTLP_TOKENS: ${OTLP_TOKENS}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      RETENTION_DAYS: "30"
+      # ACME_STAGING: "1"   # while testing, to avoid Let's Encrypt rate limits
+
+volumes:
+  otel-data:

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec curl -fs -m 2 -o /dev/null http://127.0.0.1:3000/api/health

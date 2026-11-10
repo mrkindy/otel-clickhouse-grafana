@@ -1,0 +1,55 @@
+<!--
+  Users. Passwords are injected at boot by init-config into users.d/zz-passwords.xml.
+    default     admin (schema tuning, `docker exec ... clickhouse-client`)
+    otel        writer used by the OpenTelemetry Collector (database `otel` only)
+    grafana_ro  read-only user for Grafana dashboards
+  Every user is limited to connections from inside the container.
+-->
+<clickhouse>
+    <profiles>
+        <default>
+            <max_threads>2</max_threads>
+            <max_block_size>8192</max_block_size>
+            <max_download_threads>1</max_download_threads>
+            <max_insert_threads>1</max_insert_threads>
+            <max_memory_usage>536870912</max_memory_usage>
+        </default>
+        <grafana_ro>
+            <readonly>1</readonly>
+            <max_threads>2</max_threads>
+            <max_memory_usage>402653184</max_memory_usage>
+            <max_execution_time>60</max_execution_time>
+            <constraints>
+                <max_execution_time><max>120</max><changeable_in_readonly/></max_execution_time>
+                <max_threads><max>2</max><changeable_in_readonly/></max_threads>
+            </constraints>
+        </grafana_ro>
+    </profiles>
+
+    <users>
+        <default>
+            <networks replace="replace">
+                <ip>127.0.0.1</ip>
+                <ip>::1</ip>
+            </networks>
+            <access_management>1</access_management>
+        </default>
+        <otel>
+            <profile>default</profile>
+            <quota>default</quota>
+            <networks><ip>127.0.0.1</ip><ip>::1</ip></networks>
+            <grants>
+                <query>GRANT CREATE DATABASE ON otel.*</query>
+                <query>GRANT CREATE TABLE, INSERT, SELECT, SHOW, ALTER ON otel.*</query>
+            </grants>
+        </otel>
+        <grafana_ro>
+            <profile>grafana_ro</profile>
+            <quota>default</quota>
+            <networks><ip>127.0.0.1</ip><ip>::1</ip></networks>
+            <grants>
+                <query>GRANT SELECT, SHOW ON otel.*</query>
+            </grants>
+        </grafana_ro>
+    </users>
+</clickhouse>

@@ -1,0 +1,83 @@
+<!--
+  Tuning for a small (2 GB RAM) single-node server holding OpenTelemetry data.
+  Loaded after the stock config.xml; only overrides what matters here.
+-->
+<clickhouse>
+    <logger>
+        <level>warning</level>
+        <console>1</console>
+        <log remove="1"/>
+        <errorlog remove="1"/>
+    </logger>
+
+    <!-- Only reachable from inside the container. -->
+    <listen_host replace="replace">127.0.0.1</listen_host>
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+    <mysql_port remove="1"/>
+    <postgresql_port remove="1"/>
+    <interserver_http_port remove="1"/>
+
+    <path>/data/clickhouse/</path>
+    <tmp_path>/data/clickhouse/tmp/</tmp_path>
+    <user_files_path>/data/clickhouse/user_files/</user_files_path>
+    <format_schema_path>/data/clickhouse/format_schemas/</format_schema_path>
+    <user_directories>
+        <local_directory>
+            <path>/data/clickhouse/access/</path>
+        </local_directory>
+    </user_directories>
+
+    <!-- Memory: a share of the container/host RAM (CLICKHOUSE_MEMORY_RATIO, default 0.45). -->
+    <max_server_memory_usage_to_ram_ratio from_env="CLICKHOUSE_MEMORY_RATIO"/>
+    <mark_cache_size>268435456</mark_cache_size>
+    <index_mark_cache_size>67108864</index_mark_cache_size>
+    <uncompressed_cache_size>67108864</uncompressed_cache_size>
+    <index_uncompressed_cache_size>33554432</index_uncompressed_cache_size>
+    <mmap_cache_size>256</mmap_cache_size>
+    <compiled_expression_cache_size>33554432</compiled_expression_cache_size>
+    <query_cache><max_size_in_bytes>33554432</max_size_in_bytes></query_cache>
+
+    <!-- Few background threads: data volume is small. -->
+    <background_pool_size>4</background_pool_size>
+    <background_merges_mutations_concurrency_ratio>2</background_merges_mutations_concurrency_ratio>
+    <!-- These must not exceed background_pool_size * ratio (8), or the server refuses to start. -->
+    <merge_tree>
+        <number_of_free_entries_in_pool_to_execute_mutation>4</number_of_free_entries_in_pool_to_execute_mutation>
+        <number_of_free_entries_in_pool_to_lower_max_size_of_merge>4</number_of_free_entries_in_pool_to_lower_max_size_of_merge>
+        <number_of_free_entries_in_pool_to_execute_optimize_entire_partition>4</number_of_free_entries_in_pool_to_execute_optimize_entire_partition>
+    </merge_tree>
+    <background_schedule_pool_size>8</background_schedule_pool_size>
+    <background_common_pool_size>4</background_common_pool_size>
+    <background_move_pool_size>1</background_move_pool_size>
+    <background_fetches_pool_size>1</background_fetches_pool_size>
+    <background_buffer_flush_schedule_pool_size>1</background_buffer_flush_schedule_pool_size>
+    <background_message_broker_schedule_pool_size>1</background_message_broker_schedule_pool_size>
+    <background_distributed_schedule_pool_size>1</background_distributed_schedule_pool_size>
+    <max_thread_pool_size>500</max_thread_pool_size>
+
+    <!-- Internal log tables grow without limit by default; drop most, cap the rest. -->
+    <query_log>
+        <ttl>event_date + INTERVAL 3 DAY DELETE</ttl>
+    </query_log>
+    <trace_log remove="1"/>
+    <text_log remove="1"/>
+    <metric_log remove="1"/>
+    <latency_log remove="1"/>
+    <query_metric_log remove="1"/>
+    <asynchronous_metric_log remove="1"/>
+    <query_thread_log remove="1"/>
+    <query_views_log remove="1"/>
+    <part_log remove="1"/>
+    <processors_profile_log remove="1"/>
+    <opentelemetry_span_log remove="1"/>
+    <session_log remove="1"/>
+    <error_log remove="1"/>
+    <backup_log remove="1"/>
+    <s3queue_log remove="1"/>
+    <blob_storage_log remove="1"/>
+    <background_schedule_pool_log remove="1"/>
+    <crash_log>
+        <ttl>event_date + INTERVAL 30 DAY DELETE</ttl>
+    </crash_log>
+</clickhouse>

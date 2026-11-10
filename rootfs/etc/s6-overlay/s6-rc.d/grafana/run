@@ -1,0 +1,5 @@
+#!/command/with-contenv sh
+exec 2>&1
+# No `cd` here: s6-notifyoncheck reads ./notification-fd from the service directory.
+exec s6-notifyoncheck -d -n 0 -w 1000 \
+  s6-setuidgid grafana /usr/share/grafana/bin/grafana server --homepath=/usr/share/grafana

@@ -1,0 +1,19 @@
+# Merged on top of config.yaml when OTLP_TOKENS is set.
+# Clients send `Authorization: Bearer <token>`; any token in the file is accepted.
+extensions:
+  bearertokenauth:
+    scheme: Bearer
+    filename: /run/otelcol/tokens
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        auth:
+          authenticator: bearertokenauth
+      http:
+        auth:
+          authenticator: bearertokenauth
+
+service:
+  extensions: [health_check, bearertokenauth]

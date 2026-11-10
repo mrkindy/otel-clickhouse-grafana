@@ -1,0 +1,35 @@
+# Single public entry point.
+#   /v1/*  OTLP over HTTP  -> collector 127.0.0.1:4318
+#   gRPC   OTLP over gRPC  -> collector 127.0.0.1:4317
+#   else   Grafana         -> 127.0.0.1:3000
+# SITE_ADDRESS is set at boot: the DOMAIN (automatic HTTPS) or ":80" (plain HTTP).
+# Token checks happen in the collector, not here.
+{
+	admin off
+	import /run/caddy/global-options.caddy
+	servers {
+		protocols h1 h2 h2c
+	}
+	log {
+		level WARN
+	}
+}
+
+{$SITE_ADDRESS} {
+	request_body {
+		max_size 32MB
+	}
+
+	handle /v1/* {
+		reverse_proxy 127.0.0.1:4318
+	}
+
+	@grpc protocol grpc
+	handle @grpc {
+		reverse_proxy h2c://127.0.0.1:4317
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}

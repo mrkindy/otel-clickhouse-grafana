@@ -1,0 +1,67 @@
+# OpenTelemetry Collector: OTLP in, ClickHouse out.
+# Listens on localhost only; Caddy is the single public entry point.
+# Token auth is added by auth.yaml when OTLP_TOKENS is set.
+
+extensions:
+  health_check:
+    endpoint: 127.0.0.1:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+      http:
+        endpoint: 127.0.0.1:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 150
+    spike_limit_mib: 40
+
+exporters:
+  clickhouse:
+    endpoint: tcp://127.0.0.1:9000?dial_timeout=10s
+    database: otel
+    username: otel
+    password: ${file:/run/otelcol/ch_password}
+    ttl: ${env:OTEL_TTL}
+    create_schema: true
+    async_insert: true
+    compress: lz4
+    timeout: 10s
+    # Batching lives in the exporter queue (the exporter docs advise against the batch processor).
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 1000
+      batch:
+        flush_timeout: 2s
+        min_size: 2000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
+service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      level: none
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter]
+      exporters: [clickhouse]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter]
+      exporters: [clickhouse]
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter]
+      exporters: [clickhouse]

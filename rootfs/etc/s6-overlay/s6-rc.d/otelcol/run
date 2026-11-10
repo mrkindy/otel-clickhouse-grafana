@@ -1,0 +1,7 @@
+#!/command/with-contenv sh
+exec 2>&1
+export GOMEMLIMIT=160MiB
+# OTELCOL_CONFIGS is set by init-config (adds auth.yaml when tokens exist).
+# shellcheck disable=SC2086
+exec s6-notifyoncheck -d -n 0 -w 1000 \
+  s6-setuidgid otelcol /usr/local/bin/otelcol ${OTELCOL_CONFIGS}
