@@ -1,4 +1,4 @@
-# otel-clickhouse-grafana
+# OpenTelemetry, Clickhouse and Grafana for Claude Code monitoring
 
 One container that receives OpenTelemetry data, stores it in ClickHouse and
 shows it in Grafana, with automatic HTTPS. Ships with dashboards for
