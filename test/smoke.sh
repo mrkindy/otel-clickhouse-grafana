@@ -146,7 +146,7 @@ check "all dashboards provisioned, every panel query succeeds, key values correc
     "claude-code-session-detail:Repository=example-org/example-repo"
 check "dashboards stay correct when a filter value contains a quote (no SQL injection)" \
   python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" \
-    "var:repo=evil' OR '1'='1" "var:session=evil-session" "var:user=dev1@example.com" \
+    "var:repo=example-org/evil' OR '1'='1" "var:session=evil-session" "var:user=dev1@example.com" \
     "claude-code-sessions:Prompts=1" "claude-code-session-detail:Repository=example-org/evil' OR '1'='1"
 check "repository URL (may hold credentials) is not stored in logs" test \
   "$(ch "SELECT count() FROM otel.otel_logs WHERE mapContains(LogAttributes, 'vcs.repository.url.full') OR mapContains(ResourceAttributes, 'vcs.repository.url.full')")" = 0
