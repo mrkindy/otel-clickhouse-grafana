@@ -14,6 +14,9 @@ import pathlib
 OUT = pathlib.Path(__file__).resolve().parent.parent / "rootfs/etc/grafana/dashboards"
 DS = {"type": "grafana-clickhouse-datasource", "uid": "clickhouse"}
 SERVICES = "('claude-code', 'claude-code-desktop')"
+# Variable values come from telemetry, which any token holder can write, so they
+# are always inserted with Grafana's :sqlstring format (quoted, ' doubled).
+# The "All" value is inserted verbatim by Grafana, hence the quotes inside it.
 
 # --- SQL building blocks --------------------------------------------------------
 # Identity: e-mail when Claude Code knows it, otherwise the anonymous user.id.
@@ -37,13 +40,13 @@ DELTA = "AggregationTemporality = 1"
 
 def metric_where(name):
     return (f"MetricName = '{name}' AND {DELTA} AND ServiceName IN {SERVICES} AND $__timeFilter(TimeUnix) "
-            f"AND ('${{user}}' = '__all__' OR {M_USER} = '${{user}}') "
-            f"AND ('${{repo}}' = '__all__' OR {M_REPO} = '${{repo}}')")
+            f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) "
+            f"AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}})")
 
 
 LOG_WHERE = (f"ServiceName IN {SERVICES} AND $__timeFilter(Timestamp) "
-             f"AND ('${{user}}' = '__all__' OR {L_USER} = '${{user}}') "
-             f"AND ('${{repo}}' = '__all__' OR {L_REPO} = '${{repo}}')")
+             f"AND (${{user:sqlstring}} = '__all__' OR {L_USER} = ${{user:sqlstring}}) "
+             f"AND (${{repo:sqlstring}} = '__all__' OR {L_REPO} = ${{repo:sqlstring}})")
 
 
 # Startup bookkeeping events that would drown the interesting ones in a session timeline.
@@ -172,7 +175,7 @@ USER_VAR = {
     "name": "user", "label": "User", "type": "query", "datasource": DS,
     "query": (f"SELECT DISTINCT {L_USER} FROM otel.otel_logs WHERE ServiceName IN {SERVICES} "
               f"AND $__timeFilter(Timestamp) AND {L_USER} != '' ORDER BY 1"),
-    "includeAll": True, "allValue": "__all__", "multi": False, "refresh": 2, "sort": 1,
+    "includeAll": True, "allValue": "'__all__'", "multi": False, "refresh": 2, "sort": 1,
     "current": {"text": "All", "value": "$__all"},
 }
 
@@ -180,7 +183,7 @@ REPO_VAR = {
     "name": "repo", "label": "Repository", "type": "query", "datasource": DS,
     "query": (f"SELECT DISTINCT {L_REPO} FROM otel.otel_logs WHERE ServiceName IN {SERVICES} "
               f"AND $__timeFilter(Timestamp) AND {L_REPO} != '' ORDER BY 1"),
-    "includeAll": True, "allValue": "__all__", "multi": False, "refresh": 2, "sort": 1,
+    "includeAll": True, "allValue": "'__all__'", "multi": False, "refresh": 2, "sort": 1,
     "current": {"text": "All", "value": "$__all"},
     "description": "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients.",
 }
@@ -308,7 +311,7 @@ def sessions():
 # --- Session detail -----------------------------------------------------------
 def session_detail():
     g = Grid()
-    where = f"ServiceName IN {SERVICES} AND SessionId = '${{session}}'"
+    where = f"ServiceName IN {SERVICES} AND SessionId = ${{session:sqlstring}}"
     session_var = {
         "name": "session", "label": "Session", "type": "query", "datasource": DS,
         "query": (f"SELECT SessionId FROM otel.otel_logs WHERE ServiceName IN {SERVICES} AND SessionId != '' "
@@ -397,9 +400,9 @@ def team():
         f"sumIf(Value, MetricName = 'claude_code.commit.count') AS commits, "
         f"sumIf(Value, MetricName = 'claude_code.pull_request.count') AS pull_requests "
         f"FROM otel.otel_metrics_sum WHERE ServiceName IN {SERVICES} AND {DELTA} AND $__timeFilter(TimeUnix) "
-        f"AND MetricName LIKE 'claude_code.%' AND ('${{repo}}' = '__all__' OR {M_REPO} = '${{repo}}') "
+        f"AND MetricName LIKE 'claude_code.%' AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}}) "
         f"GROUP BY u) WHERE u != '' "
-        f"AND ('${{user}}' = '__all__' OR user = '${{user}}') ORDER BY cost_usd DESC")
+        f"AND (${{user:sqlstring}} = '__all__' OR user = ${{user:sqlstring}}) ORDER BY cost_usd DESC")
     per_repo = (
         f"SELECT r AS repository, cost_usd, tokens, sessions, users, lines_added FROM ("
         f"SELECT if({M_REPO} != '', {M_REPO}, {NO_REPO}) AS r, "
@@ -410,7 +413,7 @@ def team():
         f"sumIf(Value, MetricName = 'claude_code.lines_of_code.count' AND Attributes['type'] = 'added') AS lines_added "
         f"FROM otel.otel_metrics_sum WHERE ServiceName IN {SERVICES} AND {DELTA} AND $__timeFilter(TimeUnix) "
         f"AND MetricName LIKE 'claude_code.%' "
-        f"AND ('${{user}}' = '__all__' OR {M_USER} = '${{user}}') GROUP BY r) ORDER BY cost_usd DESC")
+        f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) GROUP BY r) ORDER BY cost_usd DESC")
     p = [
         g.place(table("Per user", per_user, [unit_override("cost_usd", "currencyUSD", 2),
                                              unit_override("active_hours", "h", 1)],
@@ -479,7 +482,7 @@ def productivity():
                            f"'.count', '') AS kind, sum(Value) AS count FROM otel.otel_metrics_sum "
                            f"WHERE MetricName IN ('claude_code.commit.count', 'claude_code.pull_request.count') AND {DELTA} "
                            f"AND ServiceName IN {SERVICES} AND $__timeFilter(TimeUnix) "
-                           f"AND ('${{user}}' = '__all__' OR {M_USER} = '${{user}}') "
+                           f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) "
                            f"GROUP BY time, kind ORDER BY time", bars=True, stack=False, label="kind"), 12, 9),
     ]
     g.newline()

@@ -19,6 +19,17 @@ processors:
     check_interval: 1s
     limit_mib: 150
     spike_limit_mib: 40
+  # A git remote can embed credentials (https://user:token@host/...). Claude Code
+  # reports it as vcs.repository.url.full; the dashboards only need owner/name,
+  # so the URL is dropped before anything is stored.
+  attributes/drop-secrets:
+    actions:
+      - key: vcs.repository.url.full
+        action: delete
+  resource/drop-secrets:
+    attributes:
+      - key: vcs.repository.url.full
+        action: delete
 
 exporters:
   clickhouse:
@@ -55,13 +66,13 @@ service:
   pipelines:
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter]
+      processors: [memory_limiter, resource/drop-secrets, attributes/drop-secrets]
       exporters: [clickhouse]
     logs:
       receivers: [otlp]
-      processors: [memory_limiter]
+      processors: [memory_limiter, resource/drop-secrets, attributes/drop-secrets]
       exporters: [clickhouse]
     traces:
       receivers: [otlp]
-      processors: [memory_limiter]
+      processors: [memory_limiter, resource/drop-secrets, attributes/drop-secrets]
       exporters: [clickhouse]

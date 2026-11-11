@@ -94,8 +94,9 @@ RUN f="ocb_${OTELCOL_VERSION}_linux_${BUILDARCH}"; \
 COPY otelcol-builder.yaml .
 RUN --mount=type=cache,target=/root/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
+    # Each attempt is time-limited: a stalled module download would otherwise hang the build forever.
     for attempt in 1 2 3; do \
-      CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" ocb --config otelcol-builder.yaml && break; \
+      CGO_ENABLED=0 GOOS=linux GOARCH="${TARGETARCH}" timeout 900 ocb --config otelcol-builder.yaml && break; \
       [ "${attempt}" = 3 ] && exit 1; echo "ocb failed (attempt ${attempt}), retrying"; sleep 10; \
     done; \
     install -m 0755 _build/otelcol /otelcol

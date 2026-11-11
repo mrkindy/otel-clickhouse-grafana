@@ -140,10 +140,20 @@ check "ClickHouse datasource is healthy" bash -c \
 eventually count_ge 1 "SELECT count() FROM otel.otel_metrics_sum WHERE AggregationTemporality = 2" >/dev/null
 check "all dashboards provisioned, every panel query succeeds, key values correct" \
   python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" \
-    "claude-code-overview:Total cost=0.43" "claude-code-overview:Sessions=1" \
-    "claude-code-productivity:Lines added=120" "claude-code-sessions:Prompts=1" \
+    "claude-code-overview:Total cost=0.43" "claude-code-overview:Sessions=2" \
+    "claude-code-productivity:Lines added=120" "claude-code-sessions:Prompts=2" \
     "claude-code-overview:Cost by repository=0.43" "claude-code-team:Per repository=0.43" \
     "claude-code-session-detail:Repository=example-org/example-repo"
+check "dashboards stay correct when a filter value contains a quote (no SQL injection)" \
+  python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" \
+    "var:repo=evil' OR '1'='1" "var:session=evil-session" "var:user=dev1@example.com" \
+    "claude-code-sessions:Prompts=1" "claude-code-session-detail:Repository=example-org/evil' OR '1'='1"
+check "repository URL (may hold credentials) is not stored in logs" test \
+  "$(ch "SELECT count() FROM otel.otel_logs WHERE mapContains(LogAttributes, 'vcs.repository.url.full') OR mapContains(ResourceAttributes, 'vcs.repository.url.full')")" = 0
+check "repository URL is not stored in metrics" test \
+  "$(ch "SELECT count() FROM otel.otel_metrics_sum WHERE mapContains(Attributes, 'vcs.repository.url.full') OR mapContains(ResourceAttributes, 'vcs.repository.url.full')")" = 0
+check "no credential from a repository URL anywhere in otel_logs" test \
+  "$(ch "SELECT count() FROM otel.otel_logs WHERE position(toString(LogAttributes), 'ghp_SECRET123') > 0")" = 0
 check "grafana_ro cannot raise its ClickHouse query limits" bash -c \
   "! docker exec $NAME sh -c 'clickhouse-client --user grafana_ro --password \"\$(cat /run/grafana/ch_password)\" --query \"SELECT 1 SETTINGS max_threads=64\"' >/dev/null 2>&1"
 check "grafana_ro can still query within its limits" bash -c \

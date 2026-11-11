@@ -46,6 +46,11 @@ def iter_panels(panels):
         yield from iter_panels(p.get("panels", []))
 
 
+def all_values(dashboard):
+    return {v["name"]: (v.get("allValue") or "__all__")
+            for v in dashboard.get("templating", {}).get("list", []) if v.get("includeAll")}
+
+
 def variable_values(dashboard):
     values = {}
     for var in dashboard.get("templating", {}).get("list", []):
@@ -70,10 +75,16 @@ def first_value(base, auth, sql):
         return None
 
 
-def substitute(sql, values):
+def substitute(sql, values, all_values):
+    """Mimic Grafana: a custom "All" value is inserted as-is; otherwise the
+    :sqlstring format quotes the value and doubles any single quote."""
     for name, value in values.items():
-        sql = re.sub(r"\$\{" + re.escape(name) + r"(:[a-z]+)?\}", value, sql)
-        sql = re.sub(r"\$" + re.escape(name) + r"\b", value, sql)
+        def fmt(m, value=value, name=name):
+            if value == all_values.get(name) or m.group(1) != ":sqlstring":
+                return value
+            return "'" + value.replace("'", "''") + "'"
+        sql = re.sub(r"\$\{" + re.escape(name) + r"(:[a-z]+)?\}", fmt, sql)
+        sql = re.sub(r"\$" + re.escape(name) + r"\b", lambda m, v=value: v, sql)
     return sql
 
 
@@ -100,7 +111,12 @@ def as_number(text):
 
 def main(base, user, password, *expectations):
     expected = {}
+    overrides = {}
     for e in expectations:
+        if e.startswith("var:"):  # var:name=value forces a variable's value everywhere
+            name, value = e[4:].split("=", 1)
+            overrides[name] = value
+            continue
         key, value = e.split("=", 1)
         expected[key] = value
     auth = base64.b64encode(f"{user}:{password}".encode()).decode()
@@ -119,6 +135,7 @@ def main(base, user, password, *expectations):
         _, payload = request(base, auth, f"/api/dashboards/uid/{uid}")
         dash = payload["dashboard"]
         values = variable_values(dash)
+        alls = all_values(dash)
         queries = []
         for var in dash.get("templating", {}).get("list", []):
             if var.get("type") == "query":
@@ -127,6 +144,9 @@ def main(base, user, password, *expectations):
                 if not var.get("includeAll"):
                     # Like Grafana: a variable without "All" defaults to its first option.
                     values[var["name"]] = first_value(base, auth, sql) or "none"
+        for name, value in overrides.items():
+            if name in values:
+                values[name] = value
         for panel in iter_panels(dash.get("panels", [])):
             for target in panel.get("targets", []):
                 if target.get("rawSql"):
@@ -142,7 +162,7 @@ def main(base, user, password, *expectations):
                 "queries": [{
                     "refId": "A",
                     "datasource": {"type": "grafana-clickhouse-datasource", "uid": "clickhouse"},
-                    "rawSql": substitute(target["rawSql"], values),
+                    "rawSql": substitute(target["rawSql"], values, alls),
                     "format": target.get("format", 1),
                     "queryType": target.get("queryType", "table"),
                     "editorType": "sql",

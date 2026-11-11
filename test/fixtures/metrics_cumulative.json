@@ -96,7 +96,7 @@
            {
             "key": "vcs.repository.url.full",
             "value": {
-             "stringValue": "https://github.com/example-org/example-repo"
+             "stringValue": "https://ci-bot:ghp_SECRET123@github.com/example-org/example-repo"
             }
            },
            {
@@ -175,7 +175,7 @@
            {
             "key": "vcs.repository.url.full",
             "value": {
-             "stringValue": "https://github.com/example-org/example-repo"
+             "stringValue": "https://ci-bot:ghp_SECRET123@github.com/example-org/example-repo"
             }
            },
            {

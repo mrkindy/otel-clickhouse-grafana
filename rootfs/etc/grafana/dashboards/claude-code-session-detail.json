@@ -70,7 +70,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT any(if(UserEmail != '', UserEmail, UserId)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT any(if(UserEmail != '', UserEmail, UserId)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -120,7 +120,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT if(anyIf(Repository, Repository != '') != '', anyIf(Repository, Repository != ''), '(no repository)') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT if(anyIf(Repository, Repository != '') != '', anyIf(Repository, Repository != ''), '(no repository)') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -170,7 +170,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -220,7 +220,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT dateDiff('second', min(Timestamp), max(Timestamp)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT dateDiff('second', min(Timestamp), max(Timestamp)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -269,7 +269,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'user_prompt') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT countIf(Event = 'user_prompt') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -318,7 +318,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'api_request') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT countIf(Event = 'api_request') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -367,7 +367,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'tool_result') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT countIf(Event = 'tool_result') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -416,7 +416,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}'"
+          "rawSql": "SELECT countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring}"
         }
       ],
       "options": {
@@ -465,7 +465,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT PromptId AS prompt, min(Timestamp) AS started, dateDiff('millisecond', min(Timestamp), max(Timestamp)) / 1000 AS duration, nullIf(anyIf(LogAttributes['prompt'], Event = 'user_prompt'), '<REDACTED>') AS prompt_text, maxIf(toFloat64OrZero(LogAttributes['prompt_length']), Event = 'user_prompt') AS prompt_length, countIf(Event = 'api_request') AS api_calls, countIf(Event = 'tool_result') AS tool_calls, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) AS errors FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}' AND PromptId != '' GROUP BY PromptId ORDER BY started"
+          "rawSql": "SELECT PromptId AS prompt, min(Timestamp) AS started, dateDiff('millisecond', min(Timestamp), max(Timestamp)) / 1000 AS duration, nullIf(anyIf(LogAttributes['prompt'], Event = 'user_prompt'), '<REDACTED>') AS prompt_text, maxIf(toFloat64OrZero(LogAttributes['prompt_length']), Event = 'user_prompt') AS prompt_length, countIf(Event = 'api_request') AS api_calls, countIf(Event = 'tool_result') AS tool_calls, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) AS errors FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring} AND PromptId != '' GROUP BY PromptId ORDER BY started"
         }
       ],
       "options": {
@@ -551,7 +551,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT Timestamp AS time, substring(PromptId, 1, 8) AS prompt, replaceOne(Event, 'claude_code.', '') AS event, LogAttributes['tool_name'] AS tool, LogAttributes['model'] AS model, if(LogAttributes['duration_ms'] != '', toFloat64OrZero(LogAttributes['duration_ms']), NULL) AS duration_ms, if(Event = 'api_request', toFloat64OrZero(LogAttributes['cost_usd']), NULL) AS cost_usd, multiIf(Event = 'tool_result', if(LogAttributes['success'] = 'true', 'ok', 'failed'), Event = 'tool_decision', LogAttributes['decision'], Event = 'api_error', LogAttributes['status_code'], '') AS status, multiIf(LogAttributes['error'] != '', LogAttributes['error'], Event = 'tool_decision', LogAttributes['source'], Event = 'api_request', concat(toString(toFloat64OrZero(LogAttributes['input_tokens']) + toFloat64OrZero(LogAttributes['cache_read_tokens']) + toFloat64OrZero(LogAttributes['cache_creation_tokens'])), ' in / ', LogAttributes['output_tokens'], ' out'), Event = 'user_prompt' AND LogAttributes['prompt'] != '<REDACTED>', LogAttributes['prompt'], Event = 'hook_execution_complete', LogAttributes['hook_event'], '') AS details FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}' AND Event NOT IN ('hook_registered', 'hook_execution_start', 'plugin_loaded', 'managed_settings_resolved', 'retention_sweep', 'feedback_survey') AND NOT (Event = 'mcp_server_connection' AND LogAttributes['error'] = '' AND LogAttributes['error_code'] = '') ORDER BY Timestamp, toUInt64OrZero(LogAttributes['event.sequence']) LIMIT 5000"
+          "rawSql": "SELECT Timestamp AS time, substring(PromptId, 1, 8) AS prompt, replaceOne(Event, 'claude_code.', '') AS event, LogAttributes['tool_name'] AS tool, LogAttributes['model'] AS model, if(LogAttributes['duration_ms'] != '', toFloat64OrZero(LogAttributes['duration_ms']), NULL) AS duration_ms, if(Event = 'api_request', toFloat64OrZero(LogAttributes['cost_usd']), NULL) AS cost_usd, multiIf(Event = 'tool_result', if(LogAttributes['success'] = 'true', 'ok', 'failed'), Event = 'tool_decision', LogAttributes['decision'], Event = 'api_error', LogAttributes['status_code'], '') AS status, multiIf(LogAttributes['error'] != '', LogAttributes['error'], Event = 'tool_decision', LogAttributes['source'], Event = 'api_request', concat(toString(toFloat64OrZero(LogAttributes['input_tokens']) + toFloat64OrZero(LogAttributes['cache_read_tokens']) + toFloat64OrZero(LogAttributes['cache_creation_tokens'])), ' in / ', LogAttributes['output_tokens'], ' out'), Event = 'user_prompt' AND LogAttributes['prompt'] != '<REDACTED>', LogAttributes['prompt'], Event = 'hook_execution_complete', LogAttributes['hook_event'], '') AS details FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring} AND Event NOT IN ('hook_registered', 'hook_execution_start', 'plugin_loaded', 'managed_settings_resolved', 'retention_sweep', 'feedback_survey') AND NOT (Event = 'mcp_server_connection' AND LogAttributes['error'] = '' AND LogAttributes['error_code'] = '') ORDER BY Timestamp, toUInt64OrZero(LogAttributes['event.sequence']) LIMIT 5000"
         }
       ],
       "options": {
@@ -685,7 +685,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT LogAttributes['tool_name'] AS tool, sum(toFloat64OrZero(LogAttributes['duration_ms'])) AS total_ms FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}' AND Event = 'tool_result' GROUP BY tool ORDER BY total_ms DESC"
+          "rawSql": "SELECT LogAttributes['tool_name'] AS tool, sum(toFloat64OrZero(LogAttributes['duration_ms'])) AS total_ms FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring} AND Event = 'tool_result' GROUP BY tool ORDER BY total_ms DESC"
         }
       ],
       "options": {
@@ -732,7 +732,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT LogAttributes['model'] AS model, sum(toFloat64OrZero(LogAttributes['cost_usd'])) AS cost FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = '${session}' AND Event = 'api_request' GROUP BY model ORDER BY cost DESC"
+          "rawSql": "SELECT LogAttributes['model'] AS model, sum(toFloat64OrZero(LogAttributes['cost_usd'])) AS cost FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId = ${session:sqlstring} AND Event = 'api_request' GROUP BY model ORDER BY cost DESC"
         }
       ],
       "options": {
