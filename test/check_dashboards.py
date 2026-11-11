@@ -7,7 +7,8 @@ default), then sends the SQL through /api/ds/query so the ClickHouse plugin's
 backend expands the $__ macros exactly as it would for a browser.
 
 Usage: python3 check_dashboards.py http://127.0.0.1:18080 admin <password> [uid:Panel title=value ...]
-Each optional expectation asserts the first value returned by that panel (within 1%).
+Each optional expectation checks that panel's first row: a number is compared
+(within 1%) with the first numeric column, anything else with the first column as text.
 Exit code 0 only when all expected dashboards exist and all queries succeed.
 """
 import base64
@@ -76,19 +77,32 @@ def substitute(sql, values):
     return sql
 
 
-def first_number(result):
+def first_row(result):
     try:
-        values = result["results"]["A"]["frames"][0]["data"]["values"]
-        return float(values[-1][0])
-    except (KeyError, IndexError, TypeError, ValueError):
+        return [col[0] for col in result["results"]["A"]["frames"][0]["data"]["values"]]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+def first_number(row):
+    for v in row or []:
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return float(v)
+    return None
+
+
+def as_number(text):
+    try:
+        return float(text)
+    except ValueError:
         return None
 
 
 def main(base, user, password, *expectations):
     expected = {}
     for e in expectations:
-        key, value = e.rsplit("=", 1)
-        expected[key] = float(value)
+        key, value = e.split("=", 1)
+        expected[key] = value
     auth = base64.b64encode(f"{user}:{password}".encode()).decode()
     status, found = request(base, auth, "/api/search?type=dash-db&folderUIDs=claude-code")
     if status != 200:
@@ -144,10 +158,16 @@ def main(base, user, password, *expectations):
                 continue
             key = f"{uid}:{panel_title}"
             if key in expected:
-                got = first_number(result)
                 want = expected.pop(key)
-                if got is None or abs(got - want) > max(abs(want) * 0.01, 1e-9):
-                    print(f"  {uid}: {label}: expected {want}, got {got}")
+                row = first_row(result)
+                if as_number(want) is not None:
+                    got = first_number(row)
+                    ok = got is not None and abs(got - float(want)) <= max(abs(float(want)) * 0.01, 1e-9)
+                else:
+                    got = row[0] if row else None
+                    ok = got == want
+                if not ok:
+                    print(f"  {uid}: {label}: expected {want}, got {got} (row: {row})")
                     errors += 1
         print(f"  {uid}: {len(queries)} queries checked")
     for key in expected:

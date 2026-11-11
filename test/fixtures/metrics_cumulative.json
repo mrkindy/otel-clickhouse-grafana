@@ -92,6 +92,30 @@
             "value": {
              "stringValue": "main"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -146,6 +170,30 @@
             "key": "query_source",
             "value": {
              "stringValue": "auxiliary"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],

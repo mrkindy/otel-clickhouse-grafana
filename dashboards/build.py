@@ -21,6 +21,11 @@ M_USER = ("if(Attributes['user.email'] != '', Attributes['user.email'], "
           "if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], "
           "Attributes['user.id']))")
 L_USER = "if(UserEmail != '', UserEmail, UserId)"
+# Repository as "owner/name", sent when clients set OTEL_METRICS_INCLUDE_REPOSITORY=true.
+M_REPO = ("concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), "
+          "Attributes['vcs.repository.name'])")
+L_REPO = "Repository"
+NO_REPO = "'(no repository)'"
 M_SESSION = "Attributes['session.id']"
 
 
@@ -32,11 +37,13 @@ DELTA = "AggregationTemporality = 1"
 
 def metric_where(name):
     return (f"MetricName = '{name}' AND {DELTA} AND ServiceName IN {SERVICES} AND $__timeFilter(TimeUnix) "
-            f"AND ('${{user}}' = '__all__' OR {M_USER} = '${{user}}')")
+            f"AND ('${{user}}' = '__all__' OR {M_USER} = '${{user}}') "
+            f"AND ('${{repo}}' = '__all__' OR {M_REPO} = '${{repo}}')")
 
 
 LOG_WHERE = (f"ServiceName IN {SERVICES} AND $__timeFilter(Timestamp) "
-             f"AND ('${{user}}' = '__all__' OR {L_USER} = '${{user}}')")
+             f"AND ('${{user}}' = '__all__' OR {L_USER} = '${{user}}') "
+             f"AND ('${{repo}}' = '__all__' OR {L_REPO} = '${{repo}}')")
 
 
 # Startup bookkeeping events that would drown the interesting ones in a session timeline.
@@ -169,6 +176,15 @@ USER_VAR = {
     "current": {"text": "All", "value": "$__all"},
 }
 
+REPO_VAR = {
+    "name": "repo", "label": "Repository", "type": "query", "datasource": DS,
+    "query": (f"SELECT DISTINCT {L_REPO} FROM otel.otel_logs WHERE ServiceName IN {SERVICES} "
+              f"AND $__timeFilter(Timestamp) AND {L_REPO} != '' ORDER BY 1"),
+    "includeAll": True, "allValue": "__all__", "multi": False, "refresh": 2, "sort": 1,
+    "current": {"text": "All", "value": "$__all"},
+    "description": "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients.",
+}
+
 SESSION_LINK = "/d/claude-code-session-detail?var-session=${__value.raw}&${__url_time_range}"
 DASH_LINKS = [{"title": "Claude Code", "type": "dashboards", "tags": ["claude-code"],
                "asDropdown": False, "includeVars": True, "keepTime": True}]
@@ -231,24 +247,32 @@ def overview():
                      f"GROUP BY user ORDER BY cost DESC LIMIT 15", "currencyUSD"), 8, 9),
     ]
     g.newline()
+    p.append(g.place(bars(
+        "Cost by repository",
+        f"SELECT if({M_REPO} != '', {M_REPO}, {NO_REPO}) AS repository, sum(Value) AS cost "
+        f"FROM otel.otel_metrics_sum WHERE {cost} GROUP BY repository ORDER BY cost DESC LIMIT 15",
+        "currencyUSD", "Sessions without a repository: the client has OTEL_METRICS_INCLUDE_REPOSITORY "
+        "unset, or the project has no git origin remote."), 24, 8))
+    g.newline()
     p.append(g.place(table(
         "Most expensive sessions",
-        f"SELECT SessionId AS session, any({L_USER}) AS user, min(Timestamp) AS started, "
+        f"SELECT SessionId AS session, any({L_USER}) AS user, anyIf({L_REPO}, {L_REPO} != '') AS repository, "
+        f"min(Timestamp) AS started, "
         f"sumIf({num('cost_usd')}, Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, "
         f"countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE {LOG_WHERE} AND SessionId != '' "
         f"GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10",
         [unit_override("cost_usd", "currencyUSD", 2), link_override("session", "Open session", SESSION_LINK)]),
         24, 9))
     return dashboard("claude-code-overview", "Claude Code — Overview",
-                     "Spend, token use and activity across all Claude Code sessions.", p, [USER_VAR])
+                     "Spend, token use and activity across all Claude Code sessions.", p, [USER_VAR, REPO_VAR])
 
 
 # --- Sessions ---------------------------------------------------------------------
 def sessions():
     g = Grid()
     sql = (
-        f"SELECT SessionId AS session, any({L_USER}) AS user, min(Timestamp) AS started, "
-        f"dateDiff('second', min(Timestamp), max(Timestamp)) AS duration, "
+        f"SELECT SessionId AS session, any({L_USER}) AS user, anyIf({L_REPO}, {L_REPO} != '') AS repository, "
+        f"min(Timestamp) AS started, dateDiff('second', min(Timestamp), max(Timestamp)) AS duration, "
         f"sumIf({num('cost_usd')}, Event = 'api_request') AS cost_usd, "
         f"sumIf({num('input_tokens')} + {num('output_tokens')} + {num('cache_read_tokens')} + "
         f"{num('cache_creation_tokens')}, Event = 'api_request') AS tokens, "
@@ -278,7 +302,7 @@ def sessions():
         width_override("started", 190),
     ], "One row per session. Click a session id for its timeline.", sort="started"), 24, 20))
     return dashboard("claude-code-sessions", "Claude Code — Sessions",
-                     "Every Claude Code session with its cost, activity and errors.", p, [USER_VAR])
+                     "Every Claude Code session with its cost, activity and errors.", p, [USER_VAR, REPO_VAR])
 
 
 # --- Session detail -----------------------------------------------------------
@@ -293,17 +317,20 @@ def session_detail():
         "current": {}, "options": [],
     }
     p = [
-        g.place(stat("User", f"SELECT any({L_USER}) FROM otel.otel_logs WHERE {where}", "string"), 6, 4),
+        g.place(stat("User", f"SELECT any({L_USER}) FROM otel.otel_logs WHERE {where}", "string"), 8, 4),
+        g.place(stat("Repository",
+                     f"SELECT if(anyIf({L_REPO}, {L_REPO} != '') != '', anyIf({L_REPO}, {L_REPO} != ''), {NO_REPO}) "
+                     f"FROM otel.otel_logs WHERE {where}", "string"), 8, 4),
         g.place(stat("Cost", f"SELECT sumIf({num('cost_usd')}, Event = 'api_request') FROM otel.otel_logs WHERE {where}",
-                     "currencyUSD", 2), 3, 4),
+                     "currencyUSD", 2), 4, 4),
         g.place(stat("Duration", f"SELECT dateDiff('second', min(Timestamp), max(Timestamp)) FROM otel.otel_logs WHERE {where}",
-                     "s"), 3, 4),
-        g.place(stat("Prompts", f"SELECT countIf(Event = 'user_prompt') FROM otel.otel_logs WHERE {where}"), 3, 4),
-        g.place(stat("API calls", f"SELECT countIf(Event = 'api_request') FROM otel.otel_logs WHERE {where}"), 3, 4),
-        g.place(stat("Tool calls", f"SELECT countIf(Event = 'tool_result') FROM otel.otel_logs WHERE {where}"), 3, 4),
+                     "s"), 4, 4),
+        g.place(stat("Prompts", f"SELECT countIf(Event = 'user_prompt') FROM otel.otel_logs WHERE {where}"), 6, 4),
+        g.place(stat("API calls", f"SELECT countIf(Event = 'api_request') FROM otel.otel_logs WHERE {where}"), 6, 4),
+        g.place(stat("Tool calls", f"SELECT countIf(Event = 'tool_result') FROM otel.otel_logs WHERE {where}"), 6, 4),
         g.place(stat("Errors",
                      f"SELECT countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) "
-                     f"FROM otel.otel_logs WHERE {where}"), 3, 4),
+                     f"FROM otel.otel_logs WHERE {where}"), 6, 4),
     ]
     g.newline()
     p.append(g.place(table(
@@ -370,13 +397,28 @@ def team():
         f"sumIf(Value, MetricName = 'claude_code.commit.count') AS commits, "
         f"sumIf(Value, MetricName = 'claude_code.pull_request.count') AS pull_requests "
         f"FROM otel.otel_metrics_sum WHERE ServiceName IN {SERVICES} AND {DELTA} AND $__timeFilter(TimeUnix) "
-        f"AND MetricName LIKE 'claude_code.%' GROUP BY u) WHERE u != '' "
+        f"AND MetricName LIKE 'claude_code.%' AND ('${{repo}}' = '__all__' OR {M_REPO} = '${{repo}}') "
+        f"GROUP BY u) WHERE u != '' "
         f"AND ('${{user}}' = '__all__' OR user = '${{user}}') ORDER BY cost_usd DESC")
+    per_repo = (
+        f"SELECT r AS repository, cost_usd, tokens, sessions, users, lines_added FROM ("
+        f"SELECT if({M_REPO} != '', {M_REPO}, {NO_REPO}) AS r, "
+        f"sumIf(Value, MetricName = 'claude_code.cost.usage') AS cost_usd, "
+        f"sumIf(Value, MetricName = 'claude_code.token.usage') AS tokens, "
+        f"uniqExactIf({M_SESSION}, {M_SESSION} != '') AS sessions, "
+        f"uniqExact({M_USER}) AS users, "
+        f"sumIf(Value, MetricName = 'claude_code.lines_of_code.count' AND Attributes['type'] = 'added') AS lines_added "
+        f"FROM otel.otel_metrics_sum WHERE ServiceName IN {SERVICES} AND {DELTA} AND $__timeFilter(TimeUnix) "
+        f"AND MetricName LIKE 'claude_code.%' "
+        f"AND ('${{user}}' = '__all__' OR {M_USER} = '${{user}}') GROUP BY r) ORDER BY cost_usd DESC")
     p = [
         g.place(table("Per user", per_user, [unit_override("cost_usd", "currencyUSD", 2),
                                              unit_override("active_hours", "h", 1)],
                       "Totals for the selected time range.", sort="cost_usd"), 24, 10),
     ]
+    g.newline()
+    p.append(g.place(table("Per repository", per_repo, [unit_override("cost_usd", "currencyUSD", 2)],
+                           "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients.", sort="cost_usd"), 24, 8))
     g.newline()
     p += [
         g.place(timeseries("Cost per user",
@@ -399,7 +441,8 @@ def team():
                 12, 9),
     ]
     return dashboard("claude-code-team", "Claude Code — Team",
-                     "Compare Claude Code usage and cost across developers.", p, [USER_VAR], time_from="now-30d")
+                     "Compare Claude Code usage and cost across developers and repositories.", p, [USER_VAR, REPO_VAR],
+                     time_from="now-30d")
 
 
 # --- Productivity ---------------------------------------------------------------
@@ -456,7 +499,7 @@ def productivity():
                      f"WHERE {loc} GROUP BY user ORDER BY added DESC LIMIT 20"), 12, 10),
     ]
     return dashboard("claude-code-productivity", "Claude Code — Productivity",
-                     "Code output and time saved with Claude Code.", p, [USER_VAR], time_from="now-30d")
+                     "Code output and time saved with Claude Code.", p, [USER_VAR, REPO_VAR], time_from="now-30d")
 
 
 def main():

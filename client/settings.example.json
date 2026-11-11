@@ -6,6 +6,7 @@
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.example.com",
     "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer REPLACE_WITH_YOUR_TOKEN",
-    "OTEL_RESOURCE_ATTRIBUTES": "team.id=backend"
+    "OTEL_RESOURCE_ATTRIBUTES": "team.id=backend",
+    "OTEL_METRICS_INCLUDE_REPOSITORY": "true"
   }
 }

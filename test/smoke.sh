@@ -79,7 +79,10 @@ refuses_to_start() { # $1=name suffix $2=expected log text, rest=docker run args
   shift 2
   docker run -d --name "$n" "$@" "$IMAGE" >/dev/null
   code=$(timeout 60 docker wait "$n" 2>/dev/null || echo timeout)
-  if [ "$code" != 0 ] && [ "$code" != timeout ] && docker logs "$n" 2>&1 | grep -qF "$want"; then
+  # Capture first: `docker logs | grep -q` can fail under pipefail when grep exits early (SIGPIPE).
+  local out
+  out=$(docker logs "$n" 2>&1)
+  if [ "$code" != 0 ] && [ "$code" != timeout ] && grep -qF "$want" <<<"$out"; then
     docker rm -f "$n" >/dev/null; return 0
   fi
   echo "    (exit=$code) $(docker logs "$n" 2>&1 | grep -F init-config | tail -2)"
@@ -121,6 +124,8 @@ check "logs stored in otel_logs" eventually count_ge 1 \
   "SELECT count() FROM otel.otel_logs WHERE LogAttributes['session.id']='smoke-session'"
 check "SessionId materialized column is populated" count_ge 1 \
   "SELECT count() FROM otel.otel_logs WHERE SessionId='smoke-session'"
+check "Repository materialized column is populated (owner/name)" count_ge 1 \
+  "SELECT count() FROM otel.otel_logs WHERE Repository='example-org/example-repo'"
 check "retention TTL (30 days) applied to otel_logs" bash -c \
   "docker exec $NAME clickhouse-client --query \"SELECT create_table_query FROM system.tables WHERE database='otel' AND name='otel_logs'\" | grep -q 'toIntervalDay(30)'"
 check "retention TTL applied to otel_metrics_sum" bash -c \
@@ -136,7 +141,9 @@ eventually count_ge 1 "SELECT count() FROM otel.otel_metrics_sum WHERE Aggregati
 check "all dashboards provisioned, every panel query succeeds, key values correct" \
   python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" \
     "claude-code-overview:Total cost=0.43" "claude-code-overview:Sessions=1" \
-    "claude-code-productivity:Lines added=120" "claude-code-sessions:Prompts=1"
+    "claude-code-productivity:Lines added=120" "claude-code-sessions:Prompts=1" \
+    "claude-code-overview:Cost by repository=0.43" "claude-code-team:Per repository=0.43" \
+    "claude-code-session-detail:Repository=example-org/example-repo"
 check "grafana_ro cannot raise its ClickHouse query limits" bash -c \
   "! docker exec $NAME sh -c 'clickhouse-client --user grafana_ro --password \"\$(cat /run/grafana/ch_password)\" --query \"SELECT 1 SETTINGS max_threads=64\"' >/dev/null 2>&1"
 check "grafana_ro can still query within its limits" bash -c \

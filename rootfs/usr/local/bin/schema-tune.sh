@@ -47,5 +47,8 @@ add_col PromptId  "$(attr prompt.id)"
 add_col Event     "replaceOne($(attr event.name), 'claude_code.', '')"
 add_col UserEmail "$(attr user.email)"
 add_col UserId    "$(attr user.id)"
+# "owner/name" from OTEL_METRICS_INCLUDE_REPOSITORY=true (empty when not enabled
+# on the client or when the project has no git origin remote).
+add_col Repository "concat(if($(attr vcs.owner.name) != '', concat($(attr vcs.owner.name), '/'), ''), $(attr vcs.repository.name))"
 
 log "done"

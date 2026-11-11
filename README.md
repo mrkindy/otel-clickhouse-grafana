@@ -108,10 +108,16 @@ macOS, `C:\Program Files\ClaudeCode\managed-settings.json` on Windows):
     "OTEL_LOGS_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.example.com",
-    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer <token>"
+    "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer <token>",
+    "OTEL_METRICS_INCLUDE_REPOSITORY": "true"
   }
 }
 ```
+
+`OTEL_METRICS_INCLUDE_REPOSITORY` (Claude Code 2.1.269+) tags every session with
+its git repository (`owner/name` from the `origin` remote), which powers the
+**Repository** filter and the per-repository panels. Use the value `true`, not
+`1`. Projects without a git `origin` remote appear as "(no repository)".
 
 Keep Claude Code's default delta temporality: the dashboards ignore metrics
 sent with `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative`.
@@ -131,14 +137,14 @@ Optional client settings:
 
 ## Dashboards
 
-All in the **Claude Code** folder:
+All in the **Claude Code** folder, filterable by **User** and **Repository**:
 
 | Dashboard | Shows |
 |---|---|
-| Overview (home) | Total cost, tokens by type and model, cache hit rate, active users, sessions, API errors. |
-| Sessions | One row per session: user, start, duration, cost, prompts, tool calls, errors. Click a session for details. |
+| Overview (home) | Total cost, tokens by type and model, cache hit rate, active users, sessions, API errors, cost by repository. |
+| Sessions | One row per session: user, repository, start, duration, cost, prompts, tool calls, errors. Click a session for details. |
 | Session Detail | The timeline of one session, grouped by prompt: API calls, tools and their durations, permission decisions, errors. |
-| Team | Per-user cost, tokens, sessions and active time. |
+| Team | Per-user and per-repository cost, tokens, sessions and active time. |
 | Productivity | Lines added and removed, commits, pull requests, active time, edit accept/reject rate by language. |
 
 Any other OpenTelemetry source can send to the same endpoint; its data lands in

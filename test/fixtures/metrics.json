@@ -86,6 +86,30 @@
             "value": {
              "stringValue": "fresh"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -151,6 +175,30 @@
             "value": {
              "stringValue": "main"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -205,6 +253,30 @@
             "key": "query_source",
             "value": {
              "stringValue": "auxiliary"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],
@@ -271,6 +343,30 @@
             "value": {
              "stringValue": "input"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -325,6 +421,30 @@
             "key": "type",
             "value": {
              "stringValue": "output"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],
@@ -381,6 +501,30 @@
             "value": {
              "stringValue": "cacheRead"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -435,6 +579,30 @@
             "key": "type",
             "value": {
              "stringValue": "cacheCreation"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],
@@ -501,6 +669,30 @@
             "value": {
              "stringValue": "claude-opus-5-5"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -556,6 +748,30 @@
             "value": {
              "stringValue": "claude-opus-5-5"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -609,6 +825,30 @@
             "value": {
              "stringValue": "vscode"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -661,6 +901,30 @@
             "key": "terminal.type",
             "value": {
              "stringValue": "vscode"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],
@@ -721,6 +985,30 @@
             "value": {
              "stringValue": "user"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -769,6 +1057,30 @@
             "key": "type",
             "value": {
              "stringValue": "cli"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],
@@ -847,6 +1159,30 @@
             "value": {
              "stringValue": "Python"
             }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -913,6 +1249,30 @@
             "key": "language",
             "value": {
              "stringValue": "Python"
+            }
+           },
+           {
+            "key": "vcs.repository.url.full",
+            "value": {
+             "stringValue": "https://github.com/example-org/example-repo"
+            }
+           },
+           {
+            "key": "vcs.owner.name",
+            "value": {
+             "stringValue": "example-org"
+            }
+           },
+           {
+            "key": "vcs.repository.name",
+            "value": {
+             "stringValue": "example-repo"
+            }
+           },
+           {
+            "key": "vcs.provider.name",
+            "value": {
+             "stringValue": "github"
             }
            }
           ],

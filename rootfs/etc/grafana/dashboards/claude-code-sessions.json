@@ -48,6 +48,26 @@
           "text": "All",
           "value": "$__all"
         }
+      },
+      {
+        "name": "repo",
+        "label": "Repository",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "clickhouse"
+        },
+        "query": "SELECT DISTINCT Repository FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND Repository != '' ORDER BY 1",
+        "includeAll": true,
+        "allValue": "__all__",
+        "multi": false,
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "description": "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients."
       }
     ]
   },
@@ -73,7 +93,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT uniqExact(SessionId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND SessionId != ''"
+          "rawSql": "SELECT uniqExact(SessionId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND ('${repo}' = '__all__' OR Repository = '${repo}') AND SessionId != ''"
         }
       ],
       "options": {
@@ -122,7 +142,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'user_prompt') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}')"
+          "rawSql": "SELECT countIf(Event = 'user_prompt') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND ('${repo}' = '__all__' OR Repository = '${repo}')"
         }
       ],
       "options": {
@@ -171,7 +191,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') / nullIf(uniqExactIf(SessionId, SessionId != ''), 0) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}')"
+          "rawSql": "SELECT sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') / nullIf(uniqExactIf(SessionId, SessionId != ''), 0) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND ('${repo}' = '__all__' OR Repository = '${repo}')"
         }
       ],
       "options": {
@@ -221,7 +241,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'tool_result') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}')"
+          "rawSql": "SELECT countIf(Event = 'tool_result') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND ('${repo}' = '__all__' OR Repository = '${repo}')"
         }
       ],
       "options": {
@@ -270,7 +290,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, min(Timestamp) AS started, dateDiff('second', min(Timestamp), max(Timestamp)) AS duration, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, sumIf(toFloat64OrZero(LogAttributes['input_tokens']) + toFloat64OrZero(LogAttributes['output_tokens']) + toFloat64OrZero(LogAttributes['cache_read_tokens']) + toFloat64OrZero(LogAttributes['cache_creation_tokens']), Event = 'api_request') AS tokens, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'api_request') AS api_calls, countIf(Event = 'tool_result') AS tool_calls, countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) AS errors, countIf(Event = 'tool_decision' AND LogAttributes['decision'] = 'reject') AS rejected, anyIf(LogAttributes['model'], Event = 'api_request' AND LogAttributes['query_source'] IN ('main', '')) AS model, any(ResourceAttributes['service.version']) AS version FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND SessionId != '' GROUP BY SessionId ORDER BY started DESC LIMIT 1000"
+          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, anyIf(Repository, Repository != '') AS repository, min(Timestamp) AS started, dateDiff('second', min(Timestamp), max(Timestamp)) AS duration, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, sumIf(toFloat64OrZero(LogAttributes['input_tokens']) + toFloat64OrZero(LogAttributes['output_tokens']) + toFloat64OrZero(LogAttributes['cache_read_tokens']) + toFloat64OrZero(LogAttributes['cache_creation_tokens']), Event = 'api_request') AS tokens, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'api_request') AS api_calls, countIf(Event = 'tool_result') AS tool_calls, countIf(Event = 'api_error' OR (Event = 'tool_result' AND LogAttributes['success'] = 'false')) AS errors, countIf(Event = 'tool_decision' AND LogAttributes['decision'] = 'reject') AS rejected, anyIf(LogAttributes['model'], Event = 'api_request' AND LogAttributes['query_source'] IN ('main', '')) AS model, any(ResourceAttributes['service.version']) AS version FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND ('${user}' = '__all__' OR if(UserEmail != '', UserEmail, UserId) = '${user}') AND ('${repo}' = '__all__' OR Repository = '${repo}') AND SessionId != '' GROUP BY SessionId ORDER BY started DESC LIMIT 1000"
         }
       ],
       "options": {
