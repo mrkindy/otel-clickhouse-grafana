@@ -50,5 +50,8 @@ add_col UserId    "$(attr user.id)"
 # "owner/name" from OTEL_METRICS_INCLUDE_REPOSITORY=true (empty when not enabled
 # on the client or when the project has no git origin remote).
 add_col Repository "concat(if($(attr vcs.owner.name) != '', concat($(attr vcs.owner.name), '/'), ''), $(attr vcs.repository.name))"
+# Where the session was launched (cli, claude-vscode, claude-desktop, sdk-*, ...),
+# sent when clients set OTEL_METRICS_INCLUDE_ENTRYPOINT=true.
+add_col Surface   "$(attr app.entrypoint)"
 
 log "done"

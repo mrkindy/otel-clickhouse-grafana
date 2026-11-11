@@ -134,6 +134,12 @@
          "value": {
           "stringValue": "github"
          }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
+         }
         }
        ]
       },
@@ -283,6 +289,12 @@
          "value": {
           "stringValue": "github"
          }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
+         }
         }
        ]
       },
@@ -402,6 +414,12 @@
          "value": {
           "stringValue": "github"
          }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
+         }
         }
        ]
       },
@@ -520,6 +538,12 @@
          "key": "vcs.provider.name",
          "value": {
           "stringValue": "github"
+         }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
          }
         }
        ]
@@ -646,6 +670,12 @@
          "value": {
           "stringValue": "github"
          }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
+         }
         }
        ]
       },
@@ -770,6 +800,12 @@
          "key": "vcs.provider.name",
          "value": {
           "stringValue": "github"
+         }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
          }
         }
        ]
@@ -920,6 +956,12 @@
          "value": {
           "stringValue": "github"
          }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
+         }
         }
        ]
       },
@@ -1021,6 +1063,12 @@
          "value": {
           "stringValue": "github"
          }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
+         }
         }
        ]
       },
@@ -1121,6 +1169,12 @@
          "key": "vcs.provider.name",
          "value": {
           "stringValue": "github"
+         }
+        },
+        {
+         "key": "app.entrypoint",
+         "value": {
+          "stringValue": "cli"
          }
         }
        ]

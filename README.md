@@ -109,7 +109,8 @@ macOS, `C:\Program Files\ClaudeCode\managed-settings.json` on Windows):
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.example.com",
     "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer <token>",
-    "OTEL_METRICS_INCLUDE_REPOSITORY": "true"
+    "OTEL_METRICS_INCLUDE_REPOSITORY": "true",
+    "OTEL_METRICS_INCLUDE_ENTRYPOINT": "true"
   }
 }
 ```
@@ -118,6 +119,12 @@ macOS, `C:\Program Files\ClaudeCode\managed-settings.json` on Windows):
 its git repository (`owner/name` from the `origin` remote), which powers the
 **Repository** filter and the per-repository panels. Use the value `true`, not
 `1`. Projects without a git `origin` remote appear as "(no repository)".
+
+`OTEL_METRICS_INCLUDE_ENTRYPOINT` tags every session with where it was launched
+(`cli`, `claude-vscode`, `claude-desktop`, `sdk-cli`/`sdk-ts`/`sdk-py` for
+scripts and automation, `claude-in-slack`, `remote` for cloud sessions), which
+powers the **Surface** filter and the "Usage by surface" panel. Sessions sent
+without it appear as "(unknown)".
 
 Keep Claude Code's default delta temporality: the dashboards ignore metrics
 sent with `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=cumulative`.
@@ -137,12 +144,12 @@ Optional client settings:
 
 ## Dashboards
 
-All in the **Claude Code** folder, filterable by **User** and **Repository**:
+All in the **Claude Code** folder, filterable by **User**, **Repository** and **Surface**:
 
 | Dashboard | Shows |
 |---|---|
-| Overview (home) | Total cost, tokens by type and model, cache hit rate, active users, sessions, API errors, cost by repository. |
-| Sessions | One row per session: user, repository, start, duration, cost, prompts, tool calls, errors. Click a session for details. |
+| Overview (home) | Total cost, tokens by type and model, cache hit rate, active users, sessions, API errors, cost by repository, usage by surface (CLI, VS Code, Desktop, automation). |
+| Sessions | One row per session: user, repository, surface, start, duration, cost, prompts, tool calls, errors. Click a session for details. |
 | Session Detail | The timeline of one session, grouped by prompt: API calls, tools and their durations, permission decisions, errors. |
 | Team | Per-user and per-repository cost, tokens, sessions and active time. |
 | Productivity | Lines added and removed, commits, pull requests, active time, edit accept/reject rate by language. |

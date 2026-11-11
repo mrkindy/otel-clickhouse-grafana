@@ -68,6 +68,26 @@
           "value": "$__all"
         },
         "description": "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients."
+      },
+      {
+        "name": "surface",
+        "label": "Surface",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "clickhouse"
+        },
+        "query": "SELECT DISTINCT Surface FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND match(Surface, '^[^\\\\\\\\'']+$') ORDER BY 1",
+        "includeAll": true,
+        "allValue": "'__all__'",
+        "multi": false,
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "description": "Where sessions were launched (cli, claude-vscode, claude-desktop, sdk-*). Needs OTEL_METRICS_INCLUDE_ENTRYPOINT=true on the clients."
       }
     ]
   },
@@ -93,7 +113,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT sum(Value) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring})"
+          "rawSql": "SELECT sum(Value) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring})"
         }
       ],
       "options": {
@@ -143,7 +163,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT sum(Value) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring})"
+          "rawSql": "SELECT sum(Value) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring})"
         }
       ],
       "options": {
@@ -192,7 +212,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT uniqExact(SessionId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND SessionId != ''"
+          "rawSql": "SELECT uniqExact(SessionId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Surface = ${surface:sqlstring}) AND SessionId != ''"
         }
       ],
       "options": {
@@ -241,7 +261,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT uniqExact(if(UserEmail != '', UserEmail, UserId)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND if(UserEmail != '', UserEmail, UserId) != ''"
+          "rawSql": "SELECT uniqExact(if(UserEmail != '', UserEmail, UserId)) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Surface = ${surface:sqlstring}) AND if(UserEmail != '', UserEmail, UserId) != ''"
         }
       ],
       "options": {
@@ -290,7 +310,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT sumIf(Value, Attributes['type'] = 'cacheRead') / nullIf(sumIf(Value, Attributes['type'] IN ('input', 'cacheRead', 'cacheCreation')), 0) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring})"
+          "rawSql": "SELECT sumIf(Value, Attributes['type'] = 'cacheRead') / nullIf(sumIf(Value, Attributes['type'] IN ('input', 'cacheRead', 'cacheCreation')), 0) FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring})"
         }
       ],
       "options": {
@@ -340,7 +360,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT countIf(Event = 'api_error') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring})"
+          "rawSql": "SELECT countIf(Event = 'api_error') FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Surface = ${surface:sqlstring})"
         }
       ],
       "options": {
@@ -389,7 +409,7 @@
           "editorType": "sql",
           "format": 0,
           "queryType": "timeseries",
-          "rawSql": "SELECT $__timeInterval(TimeUnix) AS time, Attributes['model'] AS model, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) GROUP BY time, model ORDER BY time"
+          "rawSql": "SELECT $__timeInterval(TimeUnix) AS time, Attributes['model'] AS model, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY time, model ORDER BY time"
         }
       ],
       "options": {
@@ -446,7 +466,7 @@
           "editorType": "sql",
           "format": 0,
           "queryType": "timeseries",
-          "rawSql": "SELECT $__timeInterval(TimeUnix) AS time, Attributes['type'] AS type, sum(Value) AS tokens FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) GROUP BY time, type ORDER BY time"
+          "rawSql": "SELECT $__timeInterval(TimeUnix) AS time, Attributes['type'] AS type, sum(Value) AS tokens FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.token.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY time, type ORDER BY time"
         }
       ],
       "options": {
@@ -502,7 +522,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT Attributes['model'] AS model, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) GROUP BY model ORDER BY cost DESC"
+          "rawSql": "SELECT Attributes['model'] AS model, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY model ORDER BY cost DESC"
         }
       ],
       "options": {
@@ -555,7 +575,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT if(Attributes['query_source'] != '', Attributes['query_source'], 'main') AS source, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) GROUP BY source ORDER BY cost DESC"
+          "rawSql": "SELECT if(Attributes['query_source'] != '', Attributes['query_source'], 'main') AS source, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY source ORDER BY cost DESC"
         }
       ],
       "options": {
@@ -609,7 +629,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) AS user, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) GROUP BY user ORDER BY cost DESC LIMIT 15"
+          "rawSql": "SELECT if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) AS user, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY user ORDER BY cost DESC LIMIT 15"
         }
       ],
       "options": {
@@ -656,7 +676,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT if(concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) != '', concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']), '(no repository)') AS repository, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) GROUP BY repository ORDER BY cost DESC LIMIT 15"
+          "rawSql": "SELECT if(concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) != '', concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']), '(no repository)') AS repository, sum(Value) AS cost FROM otel.otel_metrics_sum WHERE MetricName = 'claude_code.cost.usage' AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY repository ORDER BY cost DESC LIMIT 15"
         }
       ],
       "options": {
@@ -680,10 +700,78 @@
       "gridPos": {
         "x": 0,
         "y": 22,
-        "w": 24,
+        "w": 14,
         "h": 8
       },
       "id": 12
+    },
+    {
+      "type": "table",
+      "title": "Usage by surface",
+      "description": "Where sessions were launched: cli (terminal), claude-vscode, claude-desktop, sdk-* (scripts and automation). '(unknown)': the client has OTEL_METRICS_INCLUDE_ENTRYPOINT unset.",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "editorType": "sql",
+          "format": 1,
+          "queryType": "table",
+          "rawSql": "SELECT if(Attributes['app.entrypoint'] != '', Attributes['app.entrypoint'], '(unknown)') AS surface, sumIf(Value, MetricName = 'claude_code.cost.usage') AS cost_usd, uniqExact(if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id']))) AS users, uniqExactIf(Attributes['session.id'], Attributes['session.id'] != '') AS sessions FROM otel.otel_metrics_sum WHERE MetricName IN ('claude_code.cost.usage', 'claude_code.session.count') AND AggregationTemporality = 1 AND ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(TimeUnix) AND (${user:sqlstring} = '__all__' OR if(Attributes['user.email'] != '', Attributes['user.email'], if(ResourceAttributes['user.email'] != '', ResourceAttributes['user.email'], Attributes['user.id'])) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), Attributes['vcs.repository.name']) = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Attributes['app.entrypoint'] = ${surface:sqlstring}) GROUP BY surface ORDER BY cost_usd DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "cost_usd",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cost_usd"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 22,
+        "w": 10,
+        "h": 8
+      },
+      "id": 13
     },
     {
       "type": "table",
@@ -703,7 +791,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, anyIf(Repository, Repository != '') AS repository, min(Timestamp) AS started, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND match(SessionId, '^[^\\\\\\\\'']+$') GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10"
+          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, anyIf(Repository, Repository != '') AS repository, min(Timestamp) AS started, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND (${surface:sqlstring} = '__all__' OR Surface = ${surface:sqlstring}) AND match(SessionId, '^[^\\\\\\\\'']+$') GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10"
         }
       ],
       "options": {
@@ -762,7 +850,7 @@
         "w": 24,
         "h": 9
       },
-      "id": 13
+      "id": 14
     }
   ]
 }

@@ -126,6 +126,8 @@ check "SessionId materialized column is populated" count_ge 1 \
   "SELECT count() FROM otel.otel_logs WHERE SessionId='smoke-session'"
 check "Repository materialized column is populated (owner/name)" count_ge 1 \
   "SELECT count() FROM otel.otel_logs WHERE Repository='example-org/example-repo'"
+check "Surface materialized column is populated (app.entrypoint)" count_ge 1 \
+  "SELECT count() FROM otel.otel_logs WHERE Surface='cli'"
 check "retention TTL (30 days) applied to otel_logs" bash -c \
   "docker exec $NAME clickhouse-client --query \"SELECT create_table_query FROM system.tables WHERE database='otel' AND name='otel_logs'\" | grep -q 'toIntervalDay(30)'"
 check "retention TTL applied to otel_metrics_sum" bash -c \
@@ -143,7 +145,8 @@ check "all dashboards provisioned, every panel query succeeds, key values correc
     "claude-code-overview:Total cost=0.43" "claude-code-overview:Sessions=3" \
     "claude-code-productivity:Lines added=120" "claude-code-sessions:Prompts=3" \
     "claude-code-overview:Cost by repository=0.43" "claude-code-team:Per repository=0.43" \
-    "claude-code-session-detail:Repository=example-org/example-repo"
+    "claude-code-session-detail:Repository=example-org/example-repo" \
+    "claude-code-overview:Usage by surface=0.43" "claude-code-session-detail:Surface=cli"
 check "dashboards stay correct when a filter value contains a quote (no SQL injection)" \
   python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" \
     "var:repo=example-org/evil' OR '1'='1" "var:session=evil-session" "var:user=dev1@example.com" \
@@ -154,6 +157,10 @@ check "repository URL is not stored in metrics" test \
   "$(ch "SELECT count() FROM otel.otel_metrics_sum WHERE mapContains(Attributes, 'vcs.repository.url.full') OR mapContains(ResourceAttributes, 'vcs.repository.url.full')")" = 0
 check "no credential from a repository URL anywhere in otel_logs" test \
   "$(ch "SELECT count() FROM otel.otel_logs WHERE position(toString(LogAttributes), 'ghp_SECRET123') > 0")" = 0
+check "Surface filter keeps matching data (surface=cli)" \
+  python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" "var:surface=cli" "claude-code-overview:Total cost=0.43"
+check "Surface filter excludes other surfaces (surface=claude-vscode)" \
+  python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" "var:surface=claude-vscode" "claude-code-overview:Total cost=0"
 check "filters never offer a value with a backslash or quote (ClickHouse escape injection)" \
   python3 "$HERE/check_dashboards.py" "$BASE" admin "$ADMIN_PASS" "forbid:\\" "forbid:'"
 check "grafana_ro cannot raise its ClickHouse query limits" bash -c \

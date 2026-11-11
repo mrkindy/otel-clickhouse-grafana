@@ -41,6 +41,10 @@ L_USER = "if(UserEmail != '', UserEmail, UserId)"
 M_REPO = ("concat(if(Attributes['vcs.owner.name'] != '', concat(Attributes['vcs.owner.name'], '/'), ''), "
           "Attributes['vcs.repository.name'])")
 L_REPO = "Repository"
+# Launch surface (app.entrypoint), sent when clients set OTEL_METRICS_INCLUDE_ENTRYPOINT=true.
+M_SURFACE = "Attributes['app.entrypoint']"
+L_SURFACE = "Surface"
+NO_SURFACE = "'(unknown)'"
 NO_REPO = "'(no repository)'"
 M_SESSION = "Attributes['session.id']"
 
@@ -54,12 +58,14 @@ DELTA = "AggregationTemporality = 1"
 def metric_where(name):
     return (f"MetricName = '{name}' AND {DELTA} AND ServiceName IN {SERVICES} AND $__timeFilter(TimeUnix) "
             f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) "
-            f"AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}})")
+            f"AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}}) "
+            f"AND (${{surface:sqlstring}} = '__all__' OR {M_SURFACE} = ${{surface:sqlstring}})")
 
 
 LOG_WHERE = (f"ServiceName IN {SERVICES} AND $__timeFilter(Timestamp) "
              f"AND (${{user:sqlstring}} = '__all__' OR {L_USER} = ${{user:sqlstring}}) "
-             f"AND (${{repo:sqlstring}} = '__all__' OR {L_REPO} = ${{repo:sqlstring}})")
+             f"AND (${{repo:sqlstring}} = '__all__' OR {L_REPO} = ${{repo:sqlstring}}) "
+             f"AND (${{surface:sqlstring}} = '__all__' OR {L_SURFACE} = ${{surface:sqlstring}})")
 
 
 # Startup bookkeeping events that would drown the interesting ones in a session timeline.
@@ -201,6 +207,16 @@ REPO_VAR = {
     "description": "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients.",
 }
 
+SURFACE_VAR = {
+    "name": "surface", "label": "Surface", "type": "query", "datasource": DS,
+    "query": (f"SELECT DISTINCT {L_SURFACE} FROM otel.otel_logs WHERE ServiceName IN {SERVICES} "
+              f"AND $__timeFilter(Timestamp) AND {safe(L_SURFACE)} ORDER BY 1"),
+    "includeAll": True, "allValue": "'__all__'", "multi": False, "refresh": 2, "sort": 1,
+    "current": {"text": "All", "value": "$__all"},
+    "description": "Where sessions were launched (cli, claude-vscode, claude-desktop, sdk-*). "
+                   "Needs OTEL_METRICS_INCLUDE_ENTRYPOINT=true on the clients.",
+}
+
 SESSION_LINK = "/d/claude-code-session-detail?var-session=${__value.raw}&${__url_time_range}"
 DASH_LINKS = [{"title": "Claude Code", "type": "dashboards", "tags": ["claude-code"],
                "asDropdown": False, "includeVars": True, "keepTime": True}]
@@ -268,7 +284,21 @@ def overview():
         f"SELECT if({M_REPO} != '', {M_REPO}, {NO_REPO}) AS repository, sum(Value) AS cost "
         f"FROM otel.otel_metrics_sum WHERE {cost} GROUP BY repository ORDER BY cost DESC LIMIT 15",
         "currencyUSD", "Sessions without a repository: the client has OTEL_METRICS_INCLUDE_REPOSITORY "
-        "unset, or the project has no git origin remote."), 24, 8))
+        "unset, or the project has no git origin remote."), 14, 8))
+    p.append(g.place(table(
+        "Usage by surface",
+        f"SELECT if({M_SURFACE} != '', {M_SURFACE}, {NO_SURFACE}) AS surface, "
+        f"sumIf(Value, MetricName = 'claude_code.cost.usage') AS cost_usd, "
+        f"uniqExact({M_USER}) AS users, uniqExactIf({M_SESSION}, {M_SESSION} != '') AS sessions "
+        f"FROM otel.otel_metrics_sum WHERE MetricName IN ('claude_code.cost.usage', 'claude_code.session.count') "
+        f"AND {DELTA} AND ServiceName IN {SERVICES} AND $__timeFilter(TimeUnix) "
+        f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) "
+        f"AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}}) "
+        f"AND (${{surface:sqlstring}} = '__all__' OR {M_SURFACE} = ${{surface:sqlstring}}) "
+        f"GROUP BY surface ORDER BY cost_usd DESC",
+        [unit_override("cost_usd", "currencyUSD", 2)],
+        "Where sessions were launched: cli (terminal), claude-vscode, claude-desktop, sdk-* (scripts and "
+        "automation). '(unknown)': the client has OTEL_METRICS_INCLUDE_ENTRYPOINT unset.", sort="cost_usd"), 10, 8))
     g.newline()
     p.append(g.place(table(
         "Most expensive sessions",
@@ -280,7 +310,7 @@ def overview():
         [unit_override("cost_usd", "currencyUSD", 2), link_override("session", "Open session", SESSION_LINK)]),
         24, 9))
     return dashboard("claude-code-overview", "Claude Code — Overview",
-                     "Spend, token use and activity across all Claude Code sessions.", p, [USER_VAR, REPO_VAR])
+                     "Spend, token use and activity across all Claude Code sessions.", p, [USER_VAR, REPO_VAR, SURFACE_VAR])
 
 
 # --- Sessions ---------------------------------------------------------------------
@@ -288,7 +318,7 @@ def sessions():
     g = Grid()
     sql = (
         f"SELECT SessionId AS session, any({L_USER}) AS user, anyIf({L_REPO}, {L_REPO} != '') AS repository, "
-        f"min(Timestamp) AS started, dateDiff('second', min(Timestamp), max(Timestamp)) AS duration, "
+        f"anyIf({L_SURFACE}, {L_SURFACE} != '') AS surface, min(Timestamp) AS started, dateDiff('second', min(Timestamp), max(Timestamp)) AS duration, "
         f"sumIf({num('cost_usd')}, Event = 'api_request') AS cost_usd, "
         f"sumIf({num('input_tokens')} + {num('output_tokens')} + {num('cache_read_tokens')} + "
         f"{num('cache_creation_tokens')}, Event = 'api_request') AS tokens, "
@@ -318,7 +348,7 @@ def sessions():
         width_override("started", 190),
     ], "One row per session. Click a session id for its timeline.", sort="started"), 24, 20))
     return dashboard("claude-code-sessions", "Claude Code — Sessions",
-                     "Every Claude Code session with its cost, activity and errors.", p, [USER_VAR, REPO_VAR])
+                     "Every Claude Code session with its cost, activity and errors.", p, [USER_VAR, REPO_VAR, SURFACE_VAR])
 
 
 # --- Session detail -----------------------------------------------------------
@@ -333,10 +363,13 @@ def session_detail():
         "current": {}, "options": [],
     }
     p = [
-        g.place(stat("User", f"SELECT any({L_USER}) FROM otel.otel_logs WHERE {where}", "string"), 8, 4),
+        g.place(stat("User", f"SELECT any({L_USER}) FROM otel.otel_logs WHERE {where}", "string"), 6, 4),
         g.place(stat("Repository",
                      f"SELECT if(anyIf({L_REPO}, {L_REPO} != '') != '', anyIf({L_REPO}, {L_REPO} != ''), {NO_REPO}) "
-                     f"FROM otel.otel_logs WHERE {where}", "string"), 8, 4),
+                     f"FROM otel.otel_logs WHERE {where}", "string"), 6, 4),
+        g.place(stat("Surface",
+                     f"SELECT if(anyIf({L_SURFACE}, {L_SURFACE} != '') != '', anyIf({L_SURFACE}, {L_SURFACE} != ''), "
+                     f"{NO_SURFACE}) FROM otel.otel_logs WHERE {where}", "string"), 4, 4),
         g.place(stat("Cost", f"SELECT sumIf({num('cost_usd')}, Event = 'api_request') FROM otel.otel_logs WHERE {where}",
                      "currencyUSD", 2), 4, 4),
         g.place(stat("Duration", f"SELECT dateDiff('second', min(Timestamp), max(Timestamp)) FROM otel.otel_logs WHERE {where}",
@@ -414,6 +447,7 @@ def team():
         f"sumIf(Value, MetricName = 'claude_code.pull_request.count') AS pull_requests "
         f"FROM otel.otel_metrics_sum WHERE ServiceName IN {SERVICES} AND {DELTA} AND $__timeFilter(TimeUnix) "
         f"AND MetricName LIKE 'claude_code.%' AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}}) "
+        f"AND (${{surface:sqlstring}} = '__all__' OR {M_SURFACE} = ${{surface:sqlstring}}) "
         f"GROUP BY u) WHERE u != '' "
         f"AND (${{user:sqlstring}} = '__all__' OR user = ${{user:sqlstring}}) ORDER BY cost_usd DESC")
     per_repo = (
@@ -426,7 +460,8 @@ def team():
         f"sumIf(Value, MetricName = 'claude_code.lines_of_code.count' AND Attributes['type'] = 'added') AS lines_added "
         f"FROM otel.otel_metrics_sum WHERE ServiceName IN {SERVICES} AND {DELTA} AND $__timeFilter(TimeUnix) "
         f"AND MetricName LIKE 'claude_code.%' "
-        f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) GROUP BY r) ORDER BY cost_usd DESC")
+        f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) "
+        f"AND (${{surface:sqlstring}} = '__all__' OR {M_SURFACE} = ${{surface:sqlstring}}) GROUP BY r) ORDER BY cost_usd DESC")
     p = [
         g.place(table("Per user", per_user, [unit_override("cost_usd", "currencyUSD", 2),
                                              unit_override("active_hours", "h", 1)],
@@ -457,7 +492,7 @@ def team():
                 12, 9),
     ]
     return dashboard("claude-code-team", "Claude Code — Team",
-                     "Compare Claude Code usage and cost across developers and repositories.", p, [USER_VAR, REPO_VAR],
+                     "Compare Claude Code usage and cost across developers and repositories.", p, [USER_VAR, REPO_VAR, SURFACE_VAR],
                      time_from="now-30d")
 
 
@@ -496,6 +531,8 @@ def productivity():
                            f"WHERE MetricName IN ('claude_code.commit.count', 'claude_code.pull_request.count') AND {DELTA} "
                            f"AND ServiceName IN {SERVICES} AND $__timeFilter(TimeUnix) "
                            f"AND (${{user:sqlstring}} = '__all__' OR {M_USER} = ${{user:sqlstring}}) "
+                           f"AND (${{repo:sqlstring}} = '__all__' OR {M_REPO} = ${{repo:sqlstring}}) "
+                           f"AND (${{surface:sqlstring}} = '__all__' OR {M_SURFACE} = ${{surface:sqlstring}}) "
                            f"GROUP BY time, kind ORDER BY time", bars=True, stack=False, label="kind"), 12, 9),
     ]
     g.newline()
@@ -515,7 +552,7 @@ def productivity():
                      f"WHERE {loc} GROUP BY user ORDER BY added DESC LIMIT 20"), 12, 10),
     ]
     return dashboard("claude-code-productivity", "Claude Code — Productivity",
-                     "Code output and time saved with Claude Code.", p, [USER_VAR, REPO_VAR], time_from="now-30d")
+                     "Code output and time saved with Claude Code.", p, [USER_VAR, REPO_VAR, SURFACE_VAR], time_from="now-30d")
 
 
 def main():

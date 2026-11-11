@@ -116,6 +116,12 @@
             "value": {
              "stringValue": "github"
             }
+           },
+           {
+            "key": "app.entrypoint",
+            "value": {
+             "stringValue": "cli"
+            }
            }
           ],
           "startTimeUnixNano": "1760000000000000000",
@@ -194,6 +200,12 @@
             "key": "vcs.provider.name",
             "value": {
              "stringValue": "github"
+            }
+           },
+           {
+            "key": "app.entrypoint",
+            "value": {
+             "stringValue": "cli"
             }
            }
           ],

@@ -146,7 +146,8 @@ macOS, `C:\Program Files\ClaudeCode\managed-settings.json` on Windows):
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.example.com",
     "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer <token>",
-    "OTEL_METRICS_INCLUDE_REPOSITORY": "true"
+    "OTEL_METRICS_INCLUDE_REPOSITORY": "true",
+    "OTEL_METRICS_INCLUDE_ENTRYPOINT": "true"
   }
 }
 ```
@@ -155,6 +156,12 @@ macOS, `C:\Program Files\ClaudeCode\managed-settings.json` on Windows):
 its git repository (`owner/name` from the `origin` remote), which powers the
 **Repository** filter and the per-repository panels. Use the value `true`, not
 `1`. Projects without a git `origin` remote appear as "(no repository)".
+
+`OTEL_METRICS_INCLUDE_ENTRYPOINT` tags every session with where it was launched
+(`cli`, `claude-vscode`, `claude-desktop`, `sdk-cli`/`sdk-ts`/`sdk-py` for
+scripts and automation, `claude-in-slack`, `remote` for cloud sessions), which
+powers the **Surface** filter and the "Usage by surface" panel. Sessions sent
+without it appear as "(unknown)".
 
 New sessions appear in Grafana within about a minute.
 
@@ -171,12 +178,12 @@ cumulative metrics.
 
 ## Dashboards
 
-Everything below is in the **Claude Code** folder in Grafana, filterable by **User** and **Repository**.
+Everything below is in the **Claude Code** folder in Grafana, filterable by **User**, **Repository** and **Surface**.
 
 | Dashboard | Shows |
 |---|---|
-| **Overview** | Total cost, tokens by type and model, cache hit rate, active users, sessions, API errors, cost by repository |
-| **Sessions** | One row per session: user, repository, duration, cost, prompts, tool calls, errors. Click a session to open it. |
+| **Overview** | Total cost, tokens by type and model, cache hit rate, active users, sessions, API errors, cost by repository, usage by surface (CLI, VS Code, Desktop, automation) |
+| **Sessions** | One row per session: user, repository, surface, duration, cost, prompts, tool calls, errors. Click a session to open it. |
 | **Session Detail** | The full timeline of one session, grouped by prompt: API calls, tools and their durations, permission decisions, errors |
 | **Team** | Cost, tokens, sessions and active time per developer and per repository |
 | **Productivity** | Lines added and removed, commits, pull requests, active time, edit accept rate by language |
