@@ -63,6 +63,17 @@ def variable_values(dashboard):
     return values
 
 
+def option_values(base, auth, sql):
+    body = {"from": "now-7d", "to": "now", "queries": [{
+        "refId": "A", "datasource": {"type": "grafana-clickhouse-datasource", "uid": "clickhouse"},
+        "rawSql": sql, "format": 1, "queryType": "table", "editorType": "sql"}]}
+    _, result = request(base, auth, "/api/ds/query", body)
+    try:
+        return [str(v) for v in result["results"]["A"]["frames"][0]["data"]["values"][0]]
+    except (KeyError, IndexError, TypeError):
+        return []
+
+
 def first_value(base, auth, sql):
     body = {"from": "now-7d", "to": "now", "queries": [{
         "refId": "A", "datasource": {"type": "grafana-clickhouse-datasource", "uid": "clickhouse"},
@@ -112,7 +123,11 @@ def as_number(text):
 def main(base, user, password, *expectations):
     expected = {}
     overrides = {}
+    forbidden = []
     for e in expectations:
+        if e.startswith("forbid:"):  # no variable option may contain this text
+            forbidden.append(e[7:])
+            continue
         if e.startswith("var:"):  # var:name=value forces a variable's value everywhere
             name, value = e[4:].split("=", 1)
             overrides[name] = value
@@ -141,6 +156,10 @@ def main(base, user, password, *expectations):
             if var.get("type") == "query":
                 sql = var["query"] if isinstance(var["query"], str) else var["query"].get("rawSql", "")
                 queries.append((f"variable {var['name']}", {"rawSql": sql, "format": 1}))
+                for value in option_values(base, auth, sql):
+                    if any(f in value for f in forbidden):
+                        print(f"  {uid}: variable {var['name']} offers unsafe option {value!r}")
+                        errors += 1
                 if not var.get("includeAll"):
                     # Like Grafana: a variable without "All" defaults to its first option.
                     values[var["name"]] = first_value(base, auth, sql) or "none"

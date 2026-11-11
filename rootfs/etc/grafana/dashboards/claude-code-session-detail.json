@@ -38,7 +38,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT SessionId FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND SessionId != '' AND $__timeFilter(Timestamp) GROUP BY SessionId ORDER BY max(Timestamp) DESC LIMIT 300",
+        "query": "SELECT SessionId FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND match(SessionId, '^[^\\\\\\\\'']+$') AND $__timeFilter(Timestamp) GROUP BY SessionId ORDER BY max(Timestamp) DESC LIMIT 300",
         "includeAll": false,
         "multi": false,
         "refresh": 2,

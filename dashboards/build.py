@@ -17,6 +17,19 @@ SERVICES = "('claude-code', 'claude-code-desktop')"
 # Variable values come from telemetry, which any token holder can write, so they
 # are always inserted with Grafana's :sqlstring format (quoted, ' doubled).
 # The "All" value is inserted verbatim by Grafana, hence the quotes inside it.
+# :sqlstring doubles quotes but leaves backslashes alone, and ClickHouse treats
+# \ as an escape inside string literals, so a value like  x\' OR 1=1 --  could
+# still break out. Values that feed a variable (dropdown options, session links)
+# are therefore limited to ones without a backslash or a quote; real emails,
+# repository names and session ids never contain either.
+# Raw string: the SQL literal must reach ClickHouse as '^[^\\\\'']+$', which it
+# unescapes to the regex ^[^\\']+$ (no backslash, no quote).
+SAFE_RE = r"'^[^\\\\'']+$'"
+
+
+def safe(col):
+    """True when col is non-empty and holds no backslash or single quote."""
+    return f"match({col}, {SAFE_RE})"
 
 # --- SQL building blocks --------------------------------------------------------
 # Identity: e-mail when Claude Code knows it, otherwise the anonymous user.id.
@@ -174,7 +187,7 @@ def width_override(field, width):
 USER_VAR = {
     "name": "user", "label": "User", "type": "query", "datasource": DS,
     "query": (f"SELECT DISTINCT {L_USER} FROM otel.otel_logs WHERE ServiceName IN {SERVICES} "
-              f"AND $__timeFilter(Timestamp) AND {L_USER} != '' ORDER BY 1"),
+              f"AND $__timeFilter(Timestamp) AND {safe(L_USER)} ORDER BY 1"),
     "includeAll": True, "allValue": "'__all__'", "multi": False, "refresh": 2, "sort": 1,
     "current": {"text": "All", "value": "$__all"},
 }
@@ -182,7 +195,7 @@ USER_VAR = {
 REPO_VAR = {
     "name": "repo", "label": "Repository", "type": "query", "datasource": DS,
     "query": (f"SELECT DISTINCT {L_REPO} FROM otel.otel_logs WHERE ServiceName IN {SERVICES} "
-              f"AND $__timeFilter(Timestamp) AND {L_REPO} != '' ORDER BY 1"),
+              f"AND $__timeFilter(Timestamp) AND {safe(L_REPO)} ORDER BY 1"),
     "includeAll": True, "allValue": "'__all__'", "multi": False, "refresh": 2, "sort": 1,
     "current": {"text": "All", "value": "$__all"},
     "description": "Needs OTEL_METRICS_INCLUDE_REPOSITORY=true on the clients.",
@@ -262,7 +275,7 @@ def overview():
         f"SELECT SessionId AS session, any({L_USER}) AS user, anyIf({L_REPO}, {L_REPO} != '') AS repository, "
         f"min(Timestamp) AS started, "
         f"sumIf({num('cost_usd')}, Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, "
-        f"countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE {LOG_WHERE} AND SessionId != '' "
+        f"countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE {LOG_WHERE} AND {safe('SessionId')} "
         f"GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10",
         [unit_override("cost_usd", "currencyUSD", 2), link_override("session", "Open session", SESSION_LINK)]),
         24, 9))
@@ -285,7 +298,7 @@ def sessions():
         f"countIf(Event = 'tool_decision' AND LogAttributes['decision'] = 'reject') AS rejected, "
         f"anyIf(LogAttributes['model'], Event = 'api_request' AND LogAttributes['query_source'] IN ('main', '')) AS model, "
         f"any(ResourceAttributes['service.version']) AS version "
-        f"FROM otel.otel_logs WHERE {LOG_WHERE} AND SessionId != '' "
+        f"FROM otel.otel_logs WHERE {LOG_WHERE} AND {safe('SessionId')} "
         f"GROUP BY SessionId ORDER BY started DESC LIMIT 1000")
     p = [
         g.place(stat("Sessions", f"SELECT uniqExact(SessionId) FROM otel.otel_logs WHERE {LOG_WHERE} AND SessionId != ''"),
@@ -314,7 +327,7 @@ def session_detail():
     where = f"ServiceName IN {SERVICES} AND SessionId = ${{session:sqlstring}}"
     session_var = {
         "name": "session", "label": "Session", "type": "query", "datasource": DS,
-        "query": (f"SELECT SessionId FROM otel.otel_logs WHERE ServiceName IN {SERVICES} AND SessionId != '' "
+        "query": (f"SELECT SessionId FROM otel.otel_logs WHERE ServiceName IN {SERVICES} AND {safe('SessionId')} "
                   f"AND $__timeFilter(Timestamp) GROUP BY SessionId ORDER BY max(Timestamp) DESC LIMIT 300"),
         "includeAll": False, "multi": False, "refresh": 2, "sort": 0,
         "current": {}, "options": [],

@@ -38,7 +38,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT DISTINCT if(UserEmail != '', UserEmail, UserId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND if(UserEmail != '', UserEmail, UserId) != '' ORDER BY 1",
+        "query": "SELECT DISTINCT if(UserEmail != '', UserEmail, UserId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND match(if(UserEmail != '', UserEmail, UserId), '^[^\\\\\\\\'']+$') ORDER BY 1",
         "includeAll": true,
         "allValue": "'__all__'",
         "multi": false,
@@ -57,7 +57,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT DISTINCT Repository FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND Repository != '' ORDER BY 1",
+        "query": "SELECT DISTINCT Repository FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND match(Repository, '^[^\\\\\\\\'']+$') ORDER BY 1",
         "includeAll": true,
         "allValue": "'__all__'",
         "multi": false,
@@ -703,7 +703,7 @@
           "editorType": "sql",
           "format": 1,
           "queryType": "table",
-          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, anyIf(Repository, Repository != '') AS repository, min(Timestamp) AS started, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND SessionId != '' GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10"
+          "rawSql": "SELECT SessionId AS session, any(if(UserEmail != '', UserEmail, UserId)) AS user, anyIf(Repository, Repository != '') AS repository, min(Timestamp) AS started, sumIf(toFloat64OrZero(LogAttributes['cost_usd']), Event = 'api_request') AS cost_usd, countIf(Event = 'user_prompt') AS prompts, countIf(Event = 'tool_result') AS tool_calls FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND (${user:sqlstring} = '__all__' OR if(UserEmail != '', UserEmail, UserId) = ${user:sqlstring}) AND (${repo:sqlstring} = '__all__' OR Repository = ${repo:sqlstring}) AND match(SessionId, '^[^\\\\\\\\'']+$') GROUP BY SessionId ORDER BY cost_usd DESC LIMIT 10"
         }
       ],
       "options": {

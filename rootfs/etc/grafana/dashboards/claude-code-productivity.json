@@ -38,7 +38,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT DISTINCT if(UserEmail != '', UserEmail, UserId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND if(UserEmail != '', UserEmail, UserId) != '' ORDER BY 1",
+        "query": "SELECT DISTINCT if(UserEmail != '', UserEmail, UserId) FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND match(if(UserEmail != '', UserEmail, UserId), '^[^\\\\\\\\'']+$') ORDER BY 1",
         "includeAll": true,
         "allValue": "'__all__'",
         "multi": false,
@@ -57,7 +57,7 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "clickhouse"
         },
-        "query": "SELECT DISTINCT Repository FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND Repository != '' ORDER BY 1",
+        "query": "SELECT DISTINCT Repository FROM otel.otel_logs WHERE ServiceName IN ('claude-code', 'claude-code-desktop') AND $__timeFilter(Timestamp) AND match(Repository, '^[^\\\\\\\\'']+$') ORDER BY 1",
         "includeAll": true,
         "allValue": "'__all__'",
         "multi": false,

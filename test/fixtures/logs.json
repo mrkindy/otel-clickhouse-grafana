@@ -1023,6 +1023,107 @@
          }
         }
        ]
+      },
+      {
+       "timeUnixNano": "1760000001000000000",
+       "observedTimeUnixNano": "1760000001000000000",
+       "severityNumber": 9,
+       "severityText": "INFO",
+       "body": {
+        "stringValue": "claude_code.user_prompt"
+       },
+       "attributes": [
+        {
+         "key": "session.id",
+         "value": {
+          "stringValue": "bad\\'session"
+         }
+        },
+        {
+         "key": "user.email",
+         "value": {
+          "stringValue": "bad\\'user@example.com"
+         }
+        },
+        {
+         "key": "user.id",
+         "value": {
+          "stringValue": "u-1"
+         }
+        },
+        {
+         "key": "user.account_uuid",
+         "value": {
+          "stringValue": "acc-1"
+         }
+        },
+        {
+         "key": "organization.id",
+         "value": {
+          "stringValue": "org-1"
+         }
+        },
+        {
+         "key": "terminal.type",
+         "value": {
+          "stringValue": "vscode"
+         }
+        },
+        {
+         "key": "event.name",
+         "value": {
+          "stringValue": "user_prompt"
+         }
+        },
+        {
+         "key": "event.timestamp",
+         "value": {
+          "stringValue": "2025-10-09T08:53:20Z"
+         }
+        },
+        {
+         "key": "event.sequence",
+         "value": {
+          "stringValue": "1"
+         }
+        },
+        {
+         "key": "prompt.id",
+         "value": {
+          "stringValue": "p-1"
+         }
+        },
+        {
+         "key": "prompt_length",
+         "value": {
+          "stringValue": "42"
+         }
+        },
+        {
+         "key": "vcs.repository.url.full",
+         "value": {
+          "stringValue": "https://ci-bot:ghp_SECRET123@github.com/example-org/example-repo"
+         }
+        },
+        {
+         "key": "vcs.owner.name",
+         "value": {
+          "stringValue": "example-org"
+         }
+        },
+        {
+         "key": "vcs.repository.name",
+         "value": {
+          "stringValue": "bad\\' OR 1=1 --"
+         }
+        },
+        {
+         "key": "vcs.provider.name",
+         "value": {
+          "stringValue": "github"
+         }
+        }
+       ]
       }
      ]
     }
